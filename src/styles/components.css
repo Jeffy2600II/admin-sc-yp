@@ -1,0 +1,1189 @@
+/* ═══════════════════════════════════════════════════════════════
+   YP ADMIN · COMPONENTS
+   assets/css/components.css
+   Buttons · Cards · Inputs · Modal · Toast · Empty · Avatar · etc.
+   สืบทอดจาก ypwork demo v8.2 — ปรับสี indigo/violet → emerald/teal
+
+   หลักการ:
+   - ทุก component อ้างอิงจาก radius token เท่านั้น
+   - เพิ่ม padding ให้หายใจมากขึ้น (breathable)
+   - ลด border ที่หนักเกินไป ให้ใช้ shadow + inset แทน
+   - ปรับ transition ให้นุ่มนวลขึ้นด้วย spring easing
+   - v8.0: compositor-only transitions (transform/opacity) แทน box-shadow
+          ลด paint cost ตอน hover/active
+   - v6.0: ปรับให้ minimal/modern มากขึ้น — shadow นุ่มลง, border บางลง
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS — chunky, rounded, with soft border
+   ═══════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-family: inherit;
+  font-weight: var(--yp-fw-bold);
+  font-size: var(--yp-text-sm);
+  line-height: 1;
+  padding: 1em 1.75em;
+  border-radius: var(--yp-radius-control);
+  background: var(--yp-bg-card);
+  color: var(--yp-text-strong);
+  border: 1px solid var(--yp-border-default);
+  box-shadow: none;
+  cursor: pointer;
+  user-select: none;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  position: relative;
+  /* v8.0: compositor-only transitions (transform/opacity)
+   *       ลด box-shadow/background transitions ที่กิน paint
+   *       ใช้ transform + opacity แทน → compositor จัดการ ไม่ต้อง paint */
+  transition:
+    transform var(--yp-t-fast),
+    opacity var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+
+.btn svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn--primary {
+  background: var(--yp-gradient-btn);
+  color: white;
+  border: 1px solid transparent;  /* v6.0: ใส่ transparent แทน ให้สะอาด */
+  font-weight: var(--yp-fw-extrabold);
+  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.20);  /* v6.0: shadow นุ่มลง */
+}
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(to right, #0284C7 0%, #0E7490 100%);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.28);  /* v6.0: hover shadow เด่นขึ้น */
+}
+
+.btn--secondary {
+  background: var(--yp-bg-card);
+  color: var(--yp-text-strong);
+  border: 1px solid var(--yp-border-default);
+  font-weight: var(--yp-fw-bold);
+}
+.btn--secondary:hover:not(:disabled) {
+  background: var(--yp-bg-card-soft);
+  border-color: var(--yp-border-strong);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--yp-text-body);
+  border: 1px solid transparent;  /* v6.0: 1.5→1px */
+  box-shadow: none;
+}
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--yp-text-strong);
+}
+
+.btn--danger {
+  background: rgba(244, 63, 94, 0.06);
+  color: #BE123C;
+  border: 1px solid rgba(244, 63, 94, 0.20);  /* v6.0: 1.5→1px */
+  font-weight: var(--yp-fw-bold);
+}
+.btn--danger:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.btn--block { width: 100%; }
+.btn--lg { padding: 1.1em 1.7em; font-size: var(--yp-text-base); }
+.btn--sm { padding: 0.6em 1em; font-size: var(--yp-text-xs); font-weight: var(--yp-fw-semibold); }
+
+.btn-icon {
+  width: 40px; height: 40px;
+  padding: 0;
+  border-radius: var(--yp-radius-sm);
+  display: inline-grid;
+  place-items: center;
+  font-size: var(--yp-text-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS — radius lg + soft shadow + inset
+   v6.0: shadow นุ่มลง, border บางลง → minimal & modern
+   ═══════════════════════════════════════════════════════════════ */
+.card {
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-card);
+  padding: var(--yp-card-pad-lg);
+  box-shadow: none;
+  /* v8.0: compositor-only transition (ลด paint cost) */
+  transition: transform var(--yp-t-fast);
+  position: relative;
+}
+
+.card--clickable { cursor: pointer; }
+/* v8.0: hover ใช้ transform แทน box-shadow (compositor-only) */
+.card--clickable:hover {
+  transform: translateY(-1px);
+}
+
+.card--gradient {
+  background: var(--yp-gradient-card);
+}
+
+.card--indigo {
+  background: var(--yp-gradient-brand);
+  color: white;
+  border: none;
+  box-shadow: var(--yp-shadow-indigo);
+}
+
+.card__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 6px;  /* v5.9: เพิ่มจาก 4px */
+  line-height: 1.3;
+  letter-spacing: 0.005em;
+}
+
+.card__meta {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  line-height: 1.45;
+}
+/* ═══════════════════════════════════════════════════════════════
+   LIST ITEMS — radius sm (20px) + เปิด padding ให้หายใจ
+   v6.0: shadow ถอดออก ให้ border ทำหน้าที่แทน → minimal
+   ═══════════════════════════════════════════════════════════════ */
+.list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-4);
+  padding: calc(var(--yp-list-pad-y) + 2px) var(--yp-list-pad-x);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  box-shadow: none;
+  cursor: pointer;
+  /* v8.0: compositor-only transition (transform/opacity)
+   *       ลด background/border/box-shadow transitions ที่กิน paint */
+  transition: transform var(--yp-t-fast), background-color var(--yp-t-fast), border-color var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 60px;
+}
+
+.list-item:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--yp-sky-500) 3%, var(--yp-bg-card));
+  border-color: var(--yp-border-sky);
+}
+
+.list-item:active {
+  transform: scale(0.99);
+  background: color-mix(in srgb, var(--yp-sky-500) 6%, var(--yp-bg-card));
+}
+
+.list-item + .list-item { margin-top: var(--yp-stack-gap); }
+
+.list-item__icon {
+  flex: 0 0 40px;
+  width: 40px; height: 40px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-card-soft);
+  color: var(--yp-text-secondary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: var(--yp-text-lg);
+  border: 1px solid var(--yp-border-subtle);
+}
+
+.list-item__icon svg { width: 18px; height: 18px; }
+
+.list-item__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+.list-item__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  margin-bottom: 0;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item__subtitle {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-secondary);
+  line-height: 1.45;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item__chevron {
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INPUTS / FIELDS — radius control (28px) + 1.5px border
+   ═══════════════════════════════════════════════════════════════ */
+.field { display: block; }
+.field + .field { margin-top: var(--yp-space-5); }
+
+.field__label {
+  display: block;
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-heading);
+  margin-bottom: var(--yp-space-2);
+  letter-spacing: 0.025em;
+}
+
+.field__hint {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.field__error {
+  font-size: var(--yp-text-xs);
+  color: #BE123C;
+  margin-top: 8px;
+  display: none;
+}
+
+.field.has-error .field__error { display: block; }
+.field.has-error .input,
+.field.has-error .textarea,
+.field.has-error .select {
+  border-color: rgba(244, 63, 94, 0.5);
+  background: rgba(244, 63, 94, 0.04);
+}
+
+.input, .textarea, .select {
+  width: 100%;
+  padding: 0.85em 1.1em;
+  border: 1px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-control);
+  background: var(--yp-bg-card);
+  font-size: var(--yp-text-sm);
+  line-height: var(--yp-leading-normal);
+  color: var(--yp-text-strong);
+  letter-spacing: 0.1px;
+  min-height: 48px;
+  /* v8.0: ลด transition เหลือเฉพาะ border-color + box-shadow
+   *       (จำเป็นสำหรับ focus state — ไม่ใช่ compositor-only แต่กิน paint น้อย) */
+  transition: border-color var(--yp-t-fast), box-shadow var(--yp-t-fast);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.input--lg {
+  padding: 0.95em 1.2em;
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-medium);
+  min-height: 54px;
+}
+
+.input::placeholder, .textarea::placeholder {
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-normal);
+}
+
+.input:focus, .textarea:focus, .select:focus {
+  outline: none;
+  border-color: var(--yp-emerald-500);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: var(--yp-leading-normal);
+  border-radius: var(--yp-radius-sm);
+}
+
+/* select ต้องมี padding-right เผื่อที่ให้ arrow */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236E6B8C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 1.25rem;
+  padding-right: 44px;
+  padding-top: 0.85em;
+  padding-bottom: 0.85em;
+  cursor: pointer;
+  /* สำคัญ: ตั้ง line-height ให้ text อยู่กลางแนวตั้ง */
+  display: block;
+  line-height: 1.4;
+}
+
+/* native select option ต้องไม่ถูก clip */
+.select option {
+  padding: 8px 12px;
+  font-size: var(--yp-text-sm);
+  line-height: 1.4;
+}
+
+.input-group {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--yp-border-default);  /* v6.0: 1.5→1px */
+  border-radius: var(--yp-radius-control);
+  background: var(--yp-bg-card);
+  overflow: hidden;
+  transition: border-color var(--yp-t-fast), box-shadow var(--yp-t-fast);
+}
+
+.input-group:focus-within {
+  border-color: var(--yp-emerald-500);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.input-group__addon {
+  display: grid;
+  place-items: center;
+  padding: 0 16px;
+  color: var(--yp-text-muted);
+  background: var(--yp-bg-card-soft);
+  font-size: var(--yp-text-sm);
+  border-right: 1px solid var(--yp-border-subtle);
+}
+
+.input-group .input {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.input-group .input:focus { box-shadow: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL — bottom sheet on mobile, centered on desktop
+   ปรับให้มนมากขึ้น + เปิด padding ให้หายใจ
+   ═══════════════════════════════════════════════════════════════ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--yp-bg-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: var(--yp-z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--yp-t-normal), visibility var(--yp-t-normal);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  /* ล็อค scroll บนหน้าหลัง */
+  overscroll-behavior: contain;
+}
+
+.modal-backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* v6.1: modal ปรับ border ให้บางลง + มุมโค้ง lg */
+.modal {
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-lg) var(--yp-radius-lg) 0 0;  /* v6.1: xl→lg ให้สมดุลกับ bottom sheet */
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--yp-t-normal);
+  box-shadow: var(--yp-shadow-lg);
+  padding: var(--yp-space-5) var(--yp-space-5) calc(var(--yp-space-6) + var(--yp-safe-bottom));  /* v6.1: ลด padding */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Chrome / Safari / Edge (Blink + Webkit) */
+.modal::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.modal-backdrop.is-open .modal {
+  transform: translateY(0);
+}
+
+.modal__handle {
+  width: 44px; height: 4px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-border-strong);
+  margin: 0 auto var(--yp-space-4);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yp-space-2);
+  margin-bottom: var(--yp-space-5);
+}
+
+.modal__title {
+  font-size: var(--yp-text-lg);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  letter-spacing: 0.01em;
+}
+
+.modal__close {
+  width: 36px; height: 36px;
+  border-radius: var(--yp-radius-sm);
+  display: grid;
+  place-items: center;
+  color: var(--yp-text-muted);
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  transition: background var(--yp-t-fast), color var(--yp-t-fast), border-color var(--yp-t-fast);
+}
+.modal__close svg {
+  width: 16px; height: 16px;
+}
+.modal__close:hover {
+  background: var(--yp-bg-card-soft);
+  color: var(--yp-text-strong);
+  border-color: var(--yp-border-strong);
+}
+
+@media (min-width: 768px) {
+  .modal-backdrop { align-items: center; padding: var(--yp-space-6); }
+  /* v6.1: มุมโค้ง lg ทั้ง 4 มุมบน desktop */
+  .modal {
+    border-radius: var(--yp-radius-lg);
+    transform: translateY(20px) scale(0.98);
+  }
+  .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+  .modal__handle { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST — radius md, indigo gradient
+   ═══════════════════════════════════════════════════════════════ */
+.toast-stack {
+  position: fixed;
+  top: calc(var(--yp-nav-top-h) + var(--yp-safe-top) + var(--yp-space-3));
+  right: calc(var(--yp-page-pad-x) + var(--yp-safe-right));
+  z-index: var(--yp-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+  pointer-events: none;
+}
+
+.toast {
+  background: linear-gradient(135deg, var(--yp-sky-600), var(--yp-cyan-600));
+  color: white;
+  padding: 12px 20px;  /* v6.1: คืนจาก 14px 22px */
+  border-radius: var(--yp-radius-md);
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  box-shadow: var(--yp-shadow-md);
+  display: flex;
+  align-items: center;
+  gap: 8px;  /* v6.1: คืนจาก 10px */
+  letter-spacing: 0.1px;
+  animation: yp-toast-in 220ms var(--yp-ease-standard) both;
+  pointer-events: auto;
+}
+.toast svg { width: 16px; height: 16px; stroke-width: 2.2; }
+
+.toast--success { background: linear-gradient(135deg, #0EA5E9, #0EA5E9); box-shadow: var(--yp-shadow-md); }
+.toast--error   { background: linear-gradient(135deg, #F43F5E, #BE123C); box-shadow: var(--yp-shadow-md); }
+.toast--info    { background: linear-gradient(135deg, var(--yp-sky-600), var(--yp-cyan-600)); }
+
+@keyframes yp-toast-in {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.toast.is-leaving {
+  animation: yp-toast-out 200ms var(--yp-ease-standard) forwards;
+}
+@keyframes yp-toast-out {
+  to { opacity: 0; transform: translateX(14px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EMPTY STATE — soft card shell
+ * v5.4: ปรับให้ modern minimal มากขึ้นอีก
+ * - icon tile ใหญ่ขึ้น 64→72px พร้อม glow บาง ๆ
+ * - เพิ่ม accent dot pattern บาง ๆ ให้ empty state มีชีวิต
+ * - title font-size ขยาย base → lg
+ * - padding เพิ่ม ให้หายใจมากขึ้น
+ * - ใช้ radius-lg แทน md เพื่อให้สม่ำเสมอกับ stat cards
+   ═══════════════════════════════════════════════════════════════ */
+.empty {
+  text-align: center;
+  padding: var(--yp-space-12) var(--yp-space-6);  /* v6.1: ลดจาก space-16, space-8 */
+  color: var(--yp-text-muted);
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-lg);
+  max-width: 480px;
+  margin-inline: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* v5.4: subtle dot pattern บาง ๆ ให้ empty state มีชีวิต */
+.empty::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 1.5px 1.5px, var(--yp-border-subtle) 1px, transparent 0);
+  background-size: 22px 22px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* v5.8: ลดมุมโค้ง md→sm (36→28px) ให้ empty icon ไม่เกือบเป็นวงกลม */
+.empty__icon {
+  width: 72px; height: 72px;
+  margin: 0 auto var(--yp-space-5);
+  border-radius: var(--yp-radius-sm);
+  background: linear-gradient(135deg, var(--yp-bg-card-soft) 0%, #F1F5F9 100%);
+  border: 1px solid var(--yp-border-default);
+  display: grid;
+  place-items: center;
+  font-size: var(--yp-text-2xl);
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--yp-shadow-sm);
+}
+
+.empty__title {
+  font-size: var(--yp-text-lg, 1.125rem);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: var(--yp-space-3);  /* v5.9: ใช้ token แทน hardcode 10px */
+  letter-spacing: 0.005em;
+  position: relative;
+  z-index: 1;
+}
+
+.empty__desc {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AVATAR
+   ═══════════════════════════════════════════════════════════════ */
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-gradient-brand-flat);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  flex-shrink: 0;
+  box-shadow: var(--yp-shadow-xs);
+  /* สำคัญ: ถ้ามี border (เช่นใน avatar-group) ให้ border อยู่ใน size (border-box)
+     ไม่ใช่เพิ่มขนาด wrapper ทำให้ SVG เต็ม wrapper เสมอ */
+  box-sizing: border-box;
+  /* clip ทุกอย่างที่ล้น — กัน SVG ล้นออกนอกวงกลม */
+  overflow: hidden;
+  /* SVG ที่ renderAvatar สร้างขนาด = size param — ให้เต็ม wrapper */
+  position: relative;
+}
+
+.avatar--xs { width: 16px; height: 16px; font-size: 8px; box-shadow: none; }
+.avatar--sm { width: 28px; height: 28px; font-size: 11px; box-shadow: none; }
+.avatar--lg { width: 48px; height: 48px; font-size: var(--yp-text-lg); }
+.avatar--xl { width: 64px; height: 64px; font-size: var(--yp-text-2xl); }
+
+/* SVG ที่ framework/avatar.js สร้างขึ้น — บังคับให้เต็ม wrapper ทุกกรณี
+ * ปัญหาก่อนหน้า: ถ้า size param ไม่ตรงกับ wrapper size, SVG จะไม่เต็ม
+ * แก้: ให้ SVG ขยายเต็ม wrapper โดยใช้ width/height: 100% */
+.avatar > svg,
+.avatar .avatar__img {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: var(--yp-radius-pill);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.avatar-group {
+  display: flex;
+  align-items: center;
+}
+.avatar-group .avatar + .avatar {
+  margin-left: -10px;
+  border: 2px solid white;
+  /* เพิ่ม z-index ให้ avatar ด้านหลังไม่ถูก avatar ด้านหน้าทับเงา */
+  position: relative;
+  z-index: 1;
+}
+/* avatar ตัวแรก z-index ต่ำสุด, ตัวถัดไปเพิ่มขึ้นเรื่อยๆ เพื่อให้ stack ดูเป็นธรรมชาติ */
+.avatar-group .avatar { z-index: 0; }
+.avatar-group .avatar + .avatar { z-index: 1; }
+.avatar-group .avatar + .avatar + .avatar { z-index: 2; }
+.avatar-group .avatar + .avatar + .avatar + .avatar { z-index: 3; }
+.avatar-group .avatar + .avatar + .avatar + .avatar + .avatar { z-index: 4; }
+.avatar-group .avatar + .avatar + .avatar + .avatar + .avatar + .avatar { z-index: 5; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ═══════════════════════════════════════════════════════════════ */
+.progress {
+  width: 100%;
+  height: 6px;
+  background: rgba(14, 165, 233, 0.10);
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+}
+.progress__fill {
+  height: 100%;
+  background: var(--yp-gradient-brand-flat);
+  border-radius: var(--yp-radius-pill);
+  transition: width var(--yp-t-slow);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SEGMENTED CONTROL (tabs)
+   ═══════════════════════════════════════════════════════════════ */
+.segmented {
+  display: inline-flex;
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-pill);
+  padding: 4px;
+  gap: 2px;
+}
+
+.segmented__btn {
+  padding: 7px 16px;
+  border-radius: var(--yp-radius-pill);
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-medium);
+  color: var(--yp-text-secondary);
+  transition: background var(--yp-t-fast), color var(--yp-t-fast);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented__btn.is-active {
+  background: var(--yp-bg-card);
+  color: var(--yp-emerald-600);
+  font-weight: var(--yp-fw-bold);
+  box-shadow: var(--yp-shadow-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILTER PILLS
+   ═══════════════════════════════════════════════════════════════ */
+.filter-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85em 1.05em;
+  border-radius: var(--yp-radius-pill);
+  font-size: var(--yp-text-sm);
+  line-height: 1;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  color: var(--yp-text-secondary);
+  opacity: 0.65;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: opacity var(--yp-t-fast), background var(--yp-t-fast), color var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filter-pill:hover { opacity: 0.85; }
+.filter-pill:active { opacity: 0.55; }
+
+.filter-pill.is-active {
+  box-shadow: 0 0 0 1.5px var(--yp-border-indigo-strong);
+  background: var(--yp-bg-indigo-soft);
+  opacity: 1;
+  color: var(--yp-emerald-600);
+  font-weight: var(--yp-fw-semibold);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TASK ROW — แต่ละ task ใน detail page
+   ═══════════════════════════════════════════════════════════════ */
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--yp-border-subtle);
+}
+.task-row:last-of-type { border-bottom: none; }
+
+.task-row__body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.task-check {
+  width: 22px; height: 22px;
+  border-radius: var(--yp-radius-pill);
+  border: 1.5px solid var(--yp-border-strong);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast);
+  margin-top: 1px;
+}
+.task-check:hover { border-color: var(--yp-emerald-500); }
+
+.task-row.is-done .task-check {
+  background: var(--yp-emerald-500);
+  border-color: var(--yp-emerald-500);
+}
+.task-row.is-done .task-check::after {
+  content: '';
+  width: 6px; height: 10px;
+  border-right: 1.5px solid white;
+  border-bottom: 1.5px solid white;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.task-row.is-done .task-title {
+  text-decoration: line-through;
+  color: var(--yp-text-faint);
+}
+
+.task-title {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.task-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.task-row__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-medium);
+  padding: 4px 10px;
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-pill);
+  letter-spacing: 0.01em;
+}
+.task-row__chip svg { width: 11px; height: 11px; stroke-width: 2; }
+
+.task-row__chip.is-overdue {
+  color: #BE123C;
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.20);
+  font-weight: var(--yp-fw-bold);
+}
+
+/* ── Time chip variants — กันสับสนระหว่าง due-date กับ estimated-time ──
+ * ก่อนหน้า: ใช้ ICON.clock เหมือนกัน → ดูเหมือนกันแยกไม่ออก
+ * ตอนนี้:
+ * - .task-row__chip--due: icon calendar, สีเทาเข้มขึ้น (เด่นเพราะเป็น deadline)
+ * - .task-row__chip--est: icon clock, สีอ่อนกว่า (เป็นเพียง estimate)
+ * - .task-row__chip-label: label "กำหนด" / "ใช้เวลา" สี faint เพื่อบอก context
+ */
+.task-row__chip--due {
+  color: var(--yp-text-heading);
+  background: var(--yp-bg-card);
+  border-color: var(--yp-border-default);
+  font-weight: var(--yp-fw-semibold);
+}
+.task-row__chip--due.is-overdue {
+  color: #BE123C;
+  background: rgba(244, 63, 94, 0.06);
+  border-color: rgba(244, 63, 94, 0.20);
+  font-weight: var(--yp-fw-bold);
+}
+.task-row__chip--est {
+  color: var(--yp-text-muted);
+  background: var(--yp-bg-card-soft);
+  border-color: var(--yp-border-subtle);
+}
+.task-row__chip-label {
+  color: var(--yp-text-faint);
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  font-size: 11px;  /* v6.1: เพิ่มจาก 10px */
+  margin-right: -2px;
+}
+.task-row__chip--due .task-row__chip-label { color: var(--yp-text-muted); }
+.task-row__chip--due.is-overdue .task-row__chip-label { color: rgba(190, 18, 60, 0.7); }
+
+/* Priority chip — colored dot + label */
+.task-row__priority {
+  font-weight: var(--yp-fw-semibold);
+}
+.task-row__priority::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: var(--yp-radius-pill);
+  background: currentColor;
+  flex-shrink: 0;
+}
+.task-row__priority svg { display: none; }
+.task-row__priority.is-priority-low {
+  color: #0284C7;
+  background: rgba(14, 165, 233, 0.08);
+  border-color: rgba(14, 165, 233, 0.20);
+}
+.task-row__priority.is-priority-high {
+  color: #BE123C;
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.22);
+}
+
+/* Tag — pill with # prefix, indigo-tinted */
+.task-row__tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--yp-text-xs);  /* v6.1: คืนจาก 11px → 12px อ่านง่ายขึ้น */
+  color: var(--yp-emerald-700);
+  background: var(--yp-bg-indigo-soft);
+  border: 1px solid var(--yp-border-indigo);
+  padding: 2px 9px;
+  border-radius: var(--yp-radius-pill);
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.01em;
+}
+
+.task-row__notes {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 8px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: var(--yp-bg-card-soft);
+  border-radius: var(--yp-radius-xs);
+  border-left: 2px solid var(--yp-border-indigo);
+  word-break: break-word;
+}
+
+.task-row__actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.task-row__edit {
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--yp-text-faint);
+  border-radius: var(--yp-radius-xs);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: background var(--yp-t-fast), color var(--yp-t-fast), opacity var(--yp-t-fast);
+  margin-top: 1px;
+}
+.task-row__edit svg { width: 14px; height: 14px; stroke-width: 2; }
+.task-row__edit:hover {
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  opacity: 1;
+}
+@media (hover: none) {
+  .task-row__edit { opacity: 0.35; }
+  .task-row__edit:active { opacity: 1; background: var(--yp-bg-indigo-soft); color: var(--yp-emerald-600); }
+}
+
+.task-row__delete {
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--yp-text-faint);
+  border-radius: var(--yp-radius-xs);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: background var(--yp-t-fast), color var(--yp-t-fast), opacity var(--yp-t-fast);
+  margin-top: 1px;
+}
+.task-row__delete svg { width: 14px; height: 14px; stroke-width: 2; }
+.task-row__delete:hover {
+  background: rgba(244, 63, 94, 0.10);
+  color: #BE123C;
+  opacity: 1;
+}
+
+/* บน touch device ซ่อนปุ่มลบโดย default ต้อง long-press หรือเข้าเมนูจัดการ */
+@media (hover: none) {
+  .task-row__delete { opacity: 0.25; }
+  .task-row__delete:active { opacity: 1; background: rgba(244, 63, 94, 0.12); color: #BE123C; }
+}
+
+.task-assignee {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DIVIDER
+   ═══════════════════════════════════════════════════════════════ */
+.divider {
+  height: 1px;
+  background: var(--yp-border-subtle);
+  margin: var(--yp-space-4) 0;
+  border: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TAG — radius pill + border
+   ═══════════════════════════════════════════════════════════════ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--yp-radius-pill);
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-medium);
+  background: rgba(14, 165, 233, 0.06);
+  color: var(--yp-emerald-700);
+  border: 1px solid rgba(14, 165, 233, 0.15);
+  line-height: 1.5;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SWITCH
+   ═══════════════════════════════════════════════════════════════ */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px; height: 26px;
+  flex-shrink: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch__slider {
+  position: absolute;
+  inset: 0;
+  background: var(--yp-border-strong);
+  border-radius: var(--yp-radius-pill);
+  transition: background var(--yp-t-fast);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+.switch__slider::before {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: var(--yp-radius-pill);
+  transition: transform var(--yp-t-normal);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), inset -1px -1px 1px rgba(255, 255, 255, 0.8);
+}
+.switch input:checked + .switch__slider { background: var(--yp-emerald-500); }
+.switch input:checked + .switch__slider::before { transform: translateX(16px); }
+
+/* ═══════════════════════════════════════════════════════════════
+   STAT CARD — v7.0: accent-aware, modern minimal
+   - ใช้ --accent สำหรับ glow, icon bg, hover
+   - ถอด shadow ออก ให้ border ทำหน้าที่
+   ═══════════════════════════════════════════════════════════════ */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--yp-space-5) var(--yp-space-5) var(--yp-space-5);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+  /* v8.0: compositor-only transition (transform) */
+  transition: transform var(--yp-t-fast);
+  /* v7.0: entrance animation */
+  animation: yp-hero-enter var(--yp-card-enter) both;
+}
+
+/* v8.0: hover ใช้ transform แทน box-shadow (compositor-only) */
+.stat:hover {
+  transform: translateY(-2px);
+}
+
+/* v7.0: accent glow ที่มุมบน-ขวา — ใช้ --accent แทน indigo ตายตัว */
+.stat::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent, var(--yp-emerald-500)) 0%, transparent 70%);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.stat__value {
+  font-size: var(--yp-text-2xl, 1.5rem);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-text-strong);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+.stat__label {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+.stat__icon {
+  width: 38px; height: 38px;
+  border-radius: var(--yp-radius-sm);
+  /* v7.0: ใช้ accent color แทน indigo ตายตัว */
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 10%, var(--yp-bg-card)) 0%,
+    color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 16%, rgba(6, 182, 212, 0.10)) 100%);
+  color: var(--accent, var(--yp-emerald-600));
+  display: grid;
+  place-items: center;
+  font-size: var(--yp-text-sm);
+  margin-bottom: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 22%, transparent);
+  position: relative;
+  z-index: 1;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--yp-space-3);
+}
+/* v7.0: stagger stat cards entrance */
+.stat-grid .stat:nth-child(1) { animation-delay: calc(var(--yp-hero-stagger) * 4); }
+.stat-grid .stat:nth-child(2) { animation-delay: calc(var(--yp-hero-stagger) * 5); }
+.stat-grid .stat:nth-child(3) { animation-delay: calc(var(--yp-hero-stagger) * 6); }
+.stat-grid .stat:nth-child(4) { animation-delay: calc(var(--yp-hero-stagger) * 7); }
+@media (min-width: 640px) {
+  .stat-grid { grid-template-columns: repeat(4, 1fr); gap: var(--yp-space-4); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FEATURE ICON
+   ═══════════════════════════════════════════════════════════════ */
+.feature-icon {
+  display: inline-grid;
+  place-items: center;
+  font-size: var(--yp-text-2xl);
+  color: var(--yp-emerald-600);
+  margin-bottom: var(--yp-space-2);
+  background: linear-gradient(180deg, var(--yp-bg-indigo-soft), #FFFFFF);
+  border-radius: var(--yp-radius-pill);
+  padding: 0.45em;
+  box-shadow: var(--yp-shadow-sm);
+  flex-shrink: 0;
+  font-weight: var(--yp-fw-bold);
+  border: 1px solid var(--yp-border-indigo);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTICE
+   ═══════════════════════════════════════════════════════════════ */
+.notice {
+  background: #FFFBF0;
+  color: #B45309;
+  border-left: 3px solid var(--yp-amber-400);
+  border-radius: var(--yp-radius-lg);
+  padding: var(--yp-space-4) var(--yp-space-5);
+  margin-bottom: var(--yp-space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  position: relative;
+  box-shadow: none;  /* v6.0: ถอด shadow */
+}
+.notice__icon {
+  font-size: var(--yp-text-lg);
+  background: #FFF7E0;
+  border-radius: var(--yp-radius-pill);
+  padding: 4px 10px;
+  border: 1px solid var(--yp-amber-400);
+  flex-shrink: 0;
+}

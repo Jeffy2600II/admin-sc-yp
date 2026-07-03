@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="30%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+  <!-- Background with gradient -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Glow overlay -->
+  <rect width="512" height="512" rx="96" fill="url(#glow)"/>
+  <!-- Shield icon (admin) -->
+  <path d="M256 96 L400 144 L400 272 C400 360 320 416 256 432 C192 416 112 360 112 272 L112 144 Z"
+        fill="none" stroke="white" stroke-width="14" stroke-linejoin="round" opacity="0.95"/>
+  <!-- Check inside shield -->
+  <path d="M200 256 L240 296 L320 216"
+        fill="none" stroke="white" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- YP text below -->
+  <text x="256" y="470" text-anchor="middle"
+        font-family="'Inter', system-ui, sans-serif" font-size="48" font-weight="800"
+        fill="white" letter-spacing="2" opacity="0.92">YP ADMIN</text>
+</svg>
