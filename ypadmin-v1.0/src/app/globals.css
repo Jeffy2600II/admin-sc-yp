@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-noto-sans-thai), var(--font-inter), system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* YP Admin design tokens + base + components — ported from ypadmin-demo-v1.5
+   All demo class names (.btn, .input, .stat-card, .action-card, .sheet, etc.)
+   are available globally so UI matches demo 100%. */
+@import "../styles/tokens.css";
+@import "../styles/base.css";
+@import "../styles/layout.css";
+@import "../styles/components.css";
+@import "../styles/pages.css";
+@import "../styles/framework/bottom-sheet.css";
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #0F172A;
+  --radius: 0.625rem;
+}
+
+html, body {
+  background: var(--yp-bg-page);
+  color: var(--yp-text-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Tailwind reset compatibility — keep demo class styles winning */
+button, input, textarea, select {
+  font-family: inherit;
+}

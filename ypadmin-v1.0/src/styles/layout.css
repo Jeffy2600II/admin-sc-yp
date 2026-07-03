@@ -1,0 +1,636 @@
+/* ═══════════════════════════════════════════════════════════════
+   YP ADMIN · LAYOUT (v1.3)
+   assets/css/layout.css
+   Page shell + top-bar + side-bar + page-header
+
+   v1.3 CHANGES:
+   - ลบ bottom-nav → เปลี่ยนเป็น side-bar (slide-in จากด้านซ้าย)
+   - เพิ่ม hamburger button ใน top-bar
+   - sidebar มี backdrop + slide animation เหมือน bottom sheet
+   - mobile-first: sidebar เต็มเกือบทั้งจอ (max 320px)
+   - desktop: sidebar ยัง slide-in เหมือนกัน (consistent UX)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   PAGE SHELL
+   ──────────────────────────────────────────────────────────── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: var(--yp-space-6);
+}
+
+.page {
+  padding-top: calc(var(--yp-nav-top-h) + var(--yp-safe-top) + var(--yp-space-4));
+  animation: yp-page-in var(--yp-page-enter, 420ms var(--yp-ease-emphasized-decel)) both;
+}
+
+.page.container {
+  padding-bottom: var(--yp-space-6);
+}
+
+@keyframes yp-page-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.992); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   TOP BAR (mobile + desktop) — clean white surface
+   ──────────────────────────────────────────────────────────── */
+.top-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: calc(var(--yp-nav-top-h) + var(--yp-safe-top));
+  padding: var(--yp-safe-top) var(--yp-page-pad-x) 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  box-shadow: 0 1px 0 var(--yp-border-subtle);
+  z-index: var(--yp-z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yp-space-3);
+  transform: translateZ(0);
+  contain: layout style;
+  isolation: isolate;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Default top accent — Sky Blue → Cyan */
+.app-shell {
+  --yp-top-from: #0EA5E9;
+  --yp-top-to: #06B6D4;
+  --yp-top-accent: #0EA5E9;
+}
+
+.top-bar__title {
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.01em;
+  background: linear-gradient(135deg,
+    var(--yp-top-from) 0%,
+    var(--yp-top-to) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  flex: 1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    --yp-top-from var(--yp-top-transition),
+    --yp-top-to var(--yp-top-transition);
+}
+
+.top-bar__title.is-swapping {
+  animation: yp-title-swap var(--yp-title-swap) var(--yp-ease-emphasized-decel);
+}
+
+@keyframes yp-title-swap {
+  0%   { opacity: 0.4; transform: translateY(-2px); filter: blur(0.5px); }
+  100% { opacity: 1;   transform: translateY(0);    filter: blur(0); }
+}
+
+.top-bar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  min-width: 40px;
+}
+
+/* ── Hamburger menu button ── */
+.top-bar__menu {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--yp-text-body);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--yp-t-fast),
+    color var(--yp-t-normal),
+    transform var(--yp-t-fast);
+}
+
+.top-bar__menu:hover {
+  background: color-mix(in srgb, var(--yp-top-accent) 10%, transparent);
+  color: var(--yp-top-accent);
+  transform: scale(1.06);
+}
+
+.top-bar__menu:active {
+  transform: scale(0.94);
+}
+
+.top-bar__menu-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--yp-t-normal);
+}
+
+.top-bar__back {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--yp-text-body);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--yp-t-fast),
+    color var(--yp-t-normal),
+    transform var(--yp-t-fast);
+}
+
+.top-bar__back:hover {
+  background: color-mix(in srgb, var(--yp-top-accent) 10%, transparent);
+  color: var(--yp-top-accent);
+  transform: scale(1.06);
+}
+
+.top-bar__back:active {
+  transform: scale(0.94);
+}
+
+.top-bar__back svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--yp-t-normal);
+}
+
+.top-bar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  min-width: 40px;
+  justify-content: flex-end;
+}
+
+.top-bar__avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--yp-radius-pill);
+  display: block;
+  flex-shrink: 0;
+  border: 1.5px solid white;
+  box-shadow: var(--yp-shadow-sm);
+  overflow: hidden;
+  background: var(--yp-bg-card-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.top-bar__avatar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ────────────────────────────────────────────────────────────
+   SIDE BAR (v1.3 — replaces bottom-nav)
+   Slide-in panel from left + backdrop, similar to bottom sheet
+   ──────────────────────────────────────────────────────────── */
+.sidebar-backdrop,
+.side-bar,
+.side-bar * { box-sizing: border-box; }
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0);
+  z-index: var(--yp-z-nav);
+  pointer-events: none;
+  transition: background var(--yp-sheet-backdrop);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidebar-backdrop.is-open {
+  background: rgba(15, 23, 42, 0.55);
+  pointer-events: auto;
+}
+
+.side-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(320px, 86vw);
+  background: var(--yp-bg-card);
+  z-index: calc(var(--yp-z-nav) + 1);
+  transform: translate3d(-105%, 0, 0);
+  transition: transform var(--yp-sheet-snap-back);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 0 0 rgba(0,0,0,0);
+  contain: layout paint style;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.side-bar.is-open {
+  transform: translate3d(0, 0, 0);
+  box-shadow: 8px 0 32px rgba(15, 23, 42, 0.18);
+}
+
+/* Hide sidebar when sheet is open (above sidebar z-index) */
+body.yp-sheet-open .side-bar,
+body.yp-sheet-open .sidebar-backdrop {
+  /* Keep sidebar visible-state intact, but lower interaction during sheet */
+}
+
+/* ── Sidebar header ── */
+.side-bar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yp-space-3);
+  padding: calc(var(--yp-safe-top) + var(--yp-space-4)) var(--yp-space-4) var(--yp-space-4);
+  background: var(--yp-gradient-brand-flat);
+  color: white;
+  flex-shrink: 0;
+}
+
+.side-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  min-width: 0;
+}
+
+.side-bar__brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--yp-radius-sm);
+  background: rgba(255, 255, 255, 0.20);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: var(--yp-fw-extrabold);
+  font-size: var(--yp-text-base);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.side-bar__brand-text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.side-bar__brand-name {
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.side-bar__brand-tag {
+  font-size: var(--yp-text-xs);
+  opacity: 0.78;
+  letter-spacing: 0.01em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.side-bar__close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 0;
+  color: white;
+  border-radius: var(--yp-radius-pill);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--yp-t-fast), transform var(--yp-t-fast);
+  flex-shrink: 0;
+}
+
+.side-bar__close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.06);
+}
+
+.side-bar__close:active {
+  transform: scale(0.94);
+}
+
+.side-bar__close svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Sidebar nav ── */
+.side-bar__nav {
+  flex: 1;
+  padding: var(--yp-space-3) var(--yp-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.side-bar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: 12px 14px;
+  border-radius: var(--yp-radius-md);
+  text-decoration: none;
+  color: var(--yp-text-body);
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-medium);
+  position: relative;
+  transition: background var(--yp-t-fast), color var(--yp-t-fast), transform var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+}
+
+.side-bar__item:hover {
+  background: var(--yp-bg-card-soft);
+  color: var(--yp-sky-600);
+}
+
+.side-bar__item:active {
+  transform: scale(0.985);
+}
+
+.side-bar__item-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--yp-bg-card-soft);
+  border-radius: var(--yp-radius-sm);
+  flex-shrink: 0;
+  transition: background var(--yp-t-fast), color var(--yp-t-fast);
+}
+
+.side-bar__item-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.side-bar__item-label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Active state — sky tint + indicator */
+.side-bar__item.is-active {
+  background: var(--yp-bg-sky-soft);
+  color: var(--yp-sky-700);
+  font-weight: var(--yp-fw-semibold);
+}
+
+.side-bar__item.is-active .side-bar__item-icon {
+  background: var(--yp-gradient-brand-flat);
+  color: white;
+  box-shadow: var(--yp-shadow-sky);
+}
+
+.side-bar__item-indicator {
+  width: 4px;
+  height: 22px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-sky-500);
+  flex-shrink: 0;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity var(--yp-t-fast), transform var(--yp-t-fast);
+}
+
+.side-bar__item.is-active .side-bar__item-indicator {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Sidebar footer (current user) ── */
+.side-bar__footer {
+  padding: var(--yp-space-3) var(--yp-space-4) calc(var(--yp-safe-bottom) + var(--yp-space-4));
+  border-top: 1px solid var(--yp-border-subtle);
+  flex-shrink: 0;
+  background: var(--yp-bg-card-soft);
+}
+
+.side-bar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: 8px 4px;
+  border-radius: var(--yp-radius-md);
+  text-decoration: none;
+  color: var(--yp-text-body);
+}
+
+.side-bar__user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1.5px solid white;
+  box-shadow: var(--yp-shadow-sm);
+}
+
+.side-bar__user-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.side-bar__user-name {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.side-bar__user-role {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ────────────────────────────────────────────────────────────
+   FLOATING ACTION BUTTON
+   ──────────────────────────────────────────────────────────── */
+.fab {
+  position: fixed;
+  right: calc(var(--yp-page-pad-x) + var(--yp-safe-right));
+  bottom: calc(var(--yp-space-5) + var(--yp-safe-bottom));
+  width: var(--yp-fab-size);
+  height: var(--yp-fab-size);
+  border-radius: var(--yp-radius-md);
+  background: var(--yp-gradient-brand-flat);
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--yp-shadow-sky);
+  z-index: var(--yp-z-fab);
+  transition: transform var(--yp-t-fast);
+  border: 1.5px solid var(--yp-sky-600);
+  contain: layout style;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.fab:hover {
+  transform: translateY(-2px);
+}
+.fab:active { transform: translateY(0) scale(0.96); }
+
+.fab svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Hide FAB when sheet/sidebar open */
+body.yp-sheet-open .fab,
+body.yp-sidebar-open .fab {
+  transform: translateY(150%);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* ────────────────────────────────────────────────────────────
+   DESKTOP: keep sidebar slide-in (consistent UX)
+   Slightly wider on larger screens
+   ──────────────────────────────────────────────────────────── */
+@media (min-width: 900px) {
+  :root {
+    --yp-nav-top-h: 56px;
+  }
+
+  .side-bar {
+    width: min(340px, 60vw);
+  }
+
+  .fab {
+    bottom: calc(var(--yp-space-5) + var(--yp-safe-bottom));
+    right: calc(var(--yp-space-5) + var(--yp-safe-right));
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --yp-page-pad-x: 2rem;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   PAGE HEADER (inside page)
+   ──────────────────────────────────────────────────────────── */
+.page-header {
+  padding: 0 0 var(--yp-space-4);
+}
+
+.page-header__eyebrow {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--yp-sky-600);
+  margin-bottom: 6px;
+}
+
+.page-header__title {
+  font-size: var(--yp-h1-size);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-text-strong);
+  letter-spacing: 0.005em;
+  line-height: var(--yp-leading-tight);
+}
+
+.page-header__subtitle {
+  margin-top: 6px;
+  color: var(--yp-text-muted);
+  font-size: var(--yp-text-sm);
+  line-height: 1.5;
+}
+
+/* ────────────────────────────────────────────────────────────
+   SECTION SPACING (inside page)
+   ──────────────────────────────────────────────────────────── */
+.section__title {
+  font-size: var(--yp-h3-size);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: var(--yp-space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yp-space-2);
+  letter-spacing: 0.005em;
+}
+
+.section__title-link {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-sky-600);
+  font-weight: var(--yp-fw-semibold);
+}

@@ -1,0 +1,468 @@
+/* ═══════════════════════════════════════════════════════════════
+   YP ADMIN · DESIGN TOKENS v1.2 (Clean White + Sky Blue Accent)
+   assets/css/tokens.css
+   โหลดเป็น CSS แรกสุดในทุก HTML page
+
+   หลักการ v1.2:
+   - ทุกมิติ (radius, spacing, typography, shadow, transition) ใช้ระบบ token
+   - ปรับ radius scale ให้มน premium (signature look) — สืบทอดจาก ypwork
+   - สีหลัก: ขาวสะอาด (White) + Slate นุ่มๆ สำหรับ surface/text
+   - สีฟ้า (Sky Blue) + Cyan เป็น "accent" เท่านั้น — ใช้เฉพาะจุดที่ต้องการ
+     ดึงสายตา เช่น primary button, active state, status badge, brand hero
+   - สีฟ้าเข้ากับสีขาวได้ดีกว่าสีเขียว — ดูสะอาด ทันสมัย และเป็นมิตร
+   - พื้นหลังทุก surface เป็น neutral white/light-slate ไม่มี blue tint หนา
+   - โครงสร้าง token และมิติทุกอย่างเท่ากับ ypwork demo v8.2
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer tokens, base, layout, components, pages, framework;
+
+@property --yp-top-from {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0EA5E9;
+}
+@property --yp-top-to {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #06B6D4;
+}
+@property --yp-top-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0EA5E9;
+}
+
+:root {
+  /* ────────────────────────────────────────────────────────────
+     BRAND COLORS — Sky Blue Operations (clean blue, white-friendly)
+     สีฟ้า + Cyan: ดูสะอาด เป็นมิตร เข้ากับสีขาวได้ดีกว่าเขียว
+     ──────────────────────────────────────────────────────────── */
+  --yp-sky-50:  #F0F9FF;
+  --yp-sky-100: #E0F2FE;
+  --yp-sky-200: #BAE6FD;
+  --yp-sky-300: #7DD3FC;
+  --yp-sky-400: #38BDF8;
+  --yp-sky-500: #0EA5E9;   /* Primary — sky-500 */
+  --yp-sky-600: #0284C7;   /* Hover/active */
+  --yp-sky-700: #0369A1;
+  --yp-sky-800: #075985;
+  --yp-sky-900: #0C4A6E;
+  --yp-sky-950: #082F49;
+
+  --yp-cyan-50:  #ECFEFF;
+  --yp-cyan-100: #CFFAFE;
+  --yp-cyan-200: #A5F3FC;
+  --yp-cyan-300: #67E8F9;
+  --yp-cyan-400: #22D3EE;
+  --yp-cyan-500: #06B6D4;   /* Accent — cyan-500 */
+  --yp-cyan-600: #0891B2;
+  --yp-cyan-700: #0E7490;
+  --yp-cyan-800: #155E75;
+  --yp-cyan-900: #164E63;
+
+  --yp-amber-400: #FBBF24;
+  --yp-amber-500: #F59E0B;
+  --yp-rose-400:  #FB7185;
+  --yp-rose-500:  #F43F5E;
+
+  /* Legacy aliases (kept for CSS inherited from ypwork components) */
+  --yp-emerald-50:  #F0F9FF;
+  --yp-emerald-100: #E0F2FE;
+  --yp-emerald-200: #BAE6FD;
+  --yp-emerald-300: #7DD3FC;
+  --yp-emerald-400: #38BDF8;
+  --yp-emerald-500: #0EA5E9;
+  --yp-emerald-600: #0284C7;
+  --yp-emerald-700: #0369A1;
+  --yp-emerald-800: #075985;
+  --yp-emerald-900: #0C4A6E;
+  --yp-emerald-950: #082F49;
+
+  --yp-teal-50:  #ECFEFF;
+  --yp-teal-100: #CFFAFE;
+  --yp-teal-200: #A5F3FC;
+  --yp-teal-300: #67E8F9;
+  --yp-teal-400: #22D3EE;
+  --yp-teal-500: #06B6D4;
+  --yp-teal-600: #0891B2;
+  --yp-teal-700: #0E7490;
+  --yp-teal-800: #155E75;
+  --yp-teal-900: #164E63;
+
+  /* ypwork indigo/violet fallback (for CSS using old aliases) */
+  --yp-indigo-500: #0EA5E9;
+  --yp-indigo-600: #0284C7;
+  --yp-violet-600: #06B6D4;
+
+  /* Status colors — same semantic as ypwork */
+  --yp-todo:        var(--yp-amber-500);
+  --yp-ongoing:     var(--yp-cyan-600);
+  --yp-done:        var(--yp-sky-500);
+  --yp-overdue:     var(--yp-rose-500);
+  --yp-pending:     var(--yp-amber-500);
+  --yp-approved:    var(--yp-sky-500);
+  --yp-rejected:    var(--yp-rose-500);
+
+  /* ────────────────────────────────────────────────────────────
+     TEXT — neutral slate (clean, high-contrast, no tint)
+     ──────────────────────────────────────────────────────────── */
+  --yp-text-strong:    #0F172A;   /* slate-900 */
+  --yp-text-heading:   #1E293B;   /* slate-800 */
+  --yp-text-body:      #334155;   /* slate-700 */
+  --yp-text-secondary: #64748B;   /* slate-500 */
+  --yp-text-muted:     #94A3B8;   /* slate-400 */
+  --yp-text-faint:     #CBD5E1;   /* slate-300 */
+  --yp-text-inverse:   #FFFFFF;
+
+  /* ────────────────────────────────────────────────────────────
+     SURFACE / BACKGROUND — clean white + neutral slate tints
+     (no color tint — let sky blue pop as accent)
+     ──────────────────────────────────────────────────────────── */
+  --yp-bg-page:        #F6F8FB;   /* page bg: very light slate-blue tint */
+  --yp-bg-card:        #FFFFFF;   /* primary card surface */
+  --yp-bg-card-soft:   #F8FAFC;   /* slate-50 — soft alt surface */
+  --yp-bg-elevated:    #FFFFFF;   /* elevated surfaces (sheets, modals) */
+  --yp-bg-sky-soft:    #F0F9FF;   /* sky-50 — used SPARINGLY for accent surfaces */
+  --yp-bg-cyan-soft:   #ECFEFF;   /* cyan-50 — used SPARINGLY for accent surfaces */
+  /* Legacy aliases */
+  --yp-bg-emerald-soft: var(--yp-bg-sky-soft);
+  --yp-bg-teal-soft:   var(--yp-bg-cyan-soft);
+  --yp-bg-indigo-soft: var(--yp-bg-sky-soft);
+  --yp-bg-overlay:     rgba(15, 23, 42, 0.55);
+  --yp-bg-cream:       #FAFAFA;
+
+  /* ────────────────────────────────────────────────────────────
+     BORDER — neutral slate-tinted (no color tint)
+     ypwork-style accent borders used selectively via --yp-accent var
+     ──────────────────────────────────────────────────────────── */
+  --yp-border-subtle:   rgba(15, 23, 42, 0.06);
+  --yp-border-default:  rgba(15, 23, 42, 0.10);
+  --yp-border-strong:   rgba(15, 23, 42, 0.16);
+  --yp-border-sky:           rgba(14, 165, 233, 0.22);   /* accent border — use intentionally */
+  --yp-border-sky-strong:    rgba(56, 189, 248, 0.45);
+  /* Legacy aliases */
+  --yp-border-emerald:        var(--yp-border-sky);
+  --yp-border-emerald-strong: var(--yp-border-sky-strong);
+  --yp-border-indigo:           var(--yp-border-sky);
+  --yp-border-indigo-strong:    var(--yp-border-sky-strong);
+  --yp-focus-ring:      rgba(14, 165, 233, 0.18);
+
+  /* ────────────────────────────────────────────────────────────
+     DANGER ZONE — red/amber for destructive actions (kept from v1.1)
+     ──────────────────────────────────────────────────────────── */
+  --yp-danger-50:   #FEF2F2;
+  --yp-danger-100:  #FEE2E2;
+  --yp-danger-500:  #EF4444;
+  --yp-danger-600:  #DC2626;
+  --yp-danger-700:  #B91C1C;
+  --yp-danger-800:  #991B1B;
+
+  --yp-warning-50:  #FFFBEB;
+  --yp-warning-100: #FEF3C7;
+  --yp-warning-500: #F59E0B;
+  --yp-warning-600: #D97706;
+  --yp-warning-700: #B45309;
+
+  /* ────────────────────────────────────────────────────────────
+     GRADIENTS — Sky Blue → Cyan (clean, fresh, white-friendly)
+     ──────────────────────────────────────────────────────────── */
+  --yp-gradient-brand:
+    radial-gradient(circle at 30% 30%, rgba(6, 182, 212, 0.55) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, rgba(14, 165, 233, 0.65) 0%, transparent 60%),
+    linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%);
+  --yp-gradient-brand-flat: linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%);
+  --yp-gradient-brand-soft: linear-gradient(135deg, rgba(14,165,233,0.10) 0%, rgba(6,182,212,0.08) 100%);
+  --yp-gradient-card: linear-gradient(180deg, #FFFFFF 0%, #F7FBFD 100%);
+  --yp-gradient-hero:
+    radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.18) 0%, transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.20) 0%, transparent 55%),
+    linear-gradient(135deg, #0C4A6E 0%, #0EA5E9 50%, #06B6D4 100%);
+  --yp-gradient-btn: linear-gradient(to right, #38BDF8 0%, #06B6D4 100%);
+
+  /* Default accent (used by event-card style ::before/::after) */
+  --yp-accent: #0EA5E9;
+  --yp-accent-soft: #38BDF8;
+
+  /* Aliases for shadow */
+  --yp-shadow-emerald: 0 4px 16px rgba(14, 165, 233, 0.18);
+  --yp-shadow-indigo:  var(--yp-shadow-emerald);
+
+  /* ────────────────────────────────────────────────────────────
+     SPACING — 4px grid (เหมือน ypwork)
+     ──────────────────────────────────────────────────────────── */
+  --yp-space-1:  0.25rem;
+  --yp-space-2:  0.5rem;
+  --yp-space-3:  0.75rem;
+  --yp-space-4:  1rem;
+  --yp-space-5:  1.25rem;
+  --yp-space-6:  1.5rem;
+  --yp-space-7:  1.75rem;
+  --yp-space-8:  2rem;
+  --yp-space-10: 2.5rem;
+  --yp-space-12: 3rem;
+  --yp-space-16: 4rem;
+  --yp-space-20: 5rem;
+
+  /* ────────────────────────────────────────────────────────────
+     BORDER RADIUS — TOKEN SYSTEM (เหมือน ypwork)
+     ──────────────────────────────────────────────────────────── */
+  --yp-radius-xs:   20px;
+  --yp-radius-sm:   28px;
+  --yp-radius-md:   36px;
+  --yp-radius-lg:   44px;
+  --yp-radius-xl:   56px;
+  --yp-radius-2xl:  68px;
+  --yp-radius-pill: 999px;
+
+  --yp-radius-control:   var(--yp-radius-md);
+  --yp-radius-card:      var(--yp-radius-lg);
+  --yp-radius-panel:     var(--yp-radius-md);
+  --yp-radius-hero:      var(--yp-radius-xl);
+
+  /* ────────────────────────────────────────────────────────────
+     TYPOGRAPHY (เหมือน ypwork)
+     v1.2: เพิ่ม --yp-text-md (15px) สำหรับจุดที่ font เดิมใหญ่ไปนิด
+     ──────────────────────────────────────────────────────────── */
+  --yp-font-stack: 'Noto Sans Thai', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --yp-font-mono:  'JetBrains Mono', 'Sarasa Mono SC', ui-monospace, monospace;
+
+  --yp-text-xs:   0.75rem;     /* 12px */
+  --yp-text-sm:   0.875rem;    /* 14px */
+  --yp-text-md:   0.9375rem;   /* 15px — v1.2: in-between for slightly-too-big spots */
+  --yp-text-base: 1rem;        /* 16px */
+  --yp-text-lg:   1.125rem;    /* 18px */
+  --yp-text-xl:   1.25rem;     /* 20px */
+  --yp-text-2xl:  1.5rem;      /* 24px — v1.2: down from 1.5rem (kept) */
+  --yp-text-3xl:  1.75rem;     /* 28px — v1.2: down from 1.875rem */
+  --yp-text-4xl:  2.125rem;    /* 34px — v1.2: down from 2.25rem */
+
+  --yp-leading-tight:   1.25;
+  --yp-leading-normal:  1.6;
+  --yp-leading-relaxed: 1.75;
+
+  --yp-fw-normal:   400;
+  --yp-fw-medium:   500;
+  --yp-fw-semibold: 600;
+  --yp-fw-bold:     700;
+  --yp-fw-extrabold: 800;
+  --yp-fw-black:    900;
+
+  /* ────────────────────────────────────────────────────────────
+     SHADOWS — neutral slate-tinted (no color tint)
+     ──────────────────────────────────────────────────────────── */
+  --yp-shadow-xs: 0 1px 4px rgba(15, 23, 42, 0.06);
+  --yp-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.07);
+  --yp-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.09);
+  --yp-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --yp-shadow-sky: 0 4px 16px rgba(14, 165, 233, 0.18);  /* accent shadow — primary buttons, FAB */
+  --yp-shadow-danger:  0 4px 16px rgba(220, 38, 38, 0.20);
+  --yp-shadow-focus: 0 0 0 3px var(--yp-focus-ring);
+
+  --yp-hover-lift: 0;
+  --yp-hover-scale: 1;
+
+  /* ────────────────────────────────────────────────────────────
+     TRANSITIONS (เหมือน ypwork)
+     ──────────────────────────────────────────────────────────── */
+  --yp-ease:          cubic-bezier(0.2, 0.9, 0.2, 1);
+  --yp-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --yp-ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --yp-ease-decel:    cubic-bezier(0, 0, 0.2, 1);
+  --yp-t-fast:   150ms var(--yp-ease-standard);
+  --yp-t-normal: 260ms var(--yp-ease);
+  --yp-t-slow:   400ms var(--yp-ease);
+
+  --yp-hero-enter:    600ms var(--yp-ease-decel);
+  --yp-hero-stagger:  80ms;
+  --yp-card-enter:    380ms var(--yp-ease-decel);
+  --yp-fade-up:       420ms var(--yp-ease-decel);
+
+  --yp-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --yp-ease-emphasized-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --yp-page-enter: 420ms var(--yp-ease-emphasized-decel);
+  --yp-title-swap: 320ms;
+
+  --yp-top-transition: 420ms var(--yp-ease-emphasized);
+
+  --yp-sheet-snap-back: 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  --yp-sheet-close: 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --yp-sheet-backdrop: 220ms cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ────────────────────────────────────────────────────────────
+     LAYOUT (เหมือน ypwork)
+     ──────────────────────────────────────────────────────────── */
+  --yp-container-max:  1110px;
+  --yp-container-md:   860px;
+  --yp-container-sm:   600px;
+  --yp-nav-bottom-h:   0px;     /* v1.3: no more bottom-nav (sidebar replaced it) */
+  --yp-nav-top-h:      52px;
+  --yp-page-pad-x:     1.25rem;
+  --yp-fab-size:       56px;
+
+  --yp-bottom-nav-margin: 0px;
+  --yp-bottom-nav-total:  0px;
+  --yp-page-bottom-pad:   calc(var(--yp-space-5) + var(--yp-safe-bottom));
+  --yp-fab-bottom:        calc(var(--yp-space-5) + var(--yp-safe-bottom));
+
+  --yp-card-pad:    1.125rem;
+  --yp-card-pad-lg: 1.5rem;
+  --yp-list-pad-y:  0.9375rem;
+  --yp-list-pad-x:  1.125rem;
+  --yp-section-gap: 1.5rem;
+  --yp-content-gap: 1rem;
+  --yp-stack-gap:   0.6875rem;
+
+  /* ────────────────────────────────────────────────────────────
+     Z-INDEX
+     ──────────────────────────────────────────────────────────── */
+  --yp-z-sticky:  100;
+  --yp-z-fab:     200;
+  --yp-z-nav:     16000;
+  --yp-z-overlay: 17000;
+  --yp-z-modal:   18000;
+  --yp-z-toast:   19000;
+
+  --yp-safe-top:    env(safe-area-inset-top, 0px);
+  --yp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --yp-safe-left:   env(safe-area-inset-left, 0px);
+  --yp-safe-right:  env(safe-area-inset-right, 0px);
+
+  /* v1.2: Slightly reduced headline scale — felt a touch too big */
+  --yp-h1-size: clamp(1.25rem, 1.12rem + 0.55vw, 1.50rem);
+  --yp-h2-size: clamp(1.08rem, 1.02rem + 0.35vw, 1.26rem);
+  --yp-h3-size: clamp(0.98rem, 0.94rem + 0.25vw, 1.12rem);
+  --yp-lead-size: clamp(0.92rem, 0.90rem + 0.12vw, 1.02rem);
+}
+
+/* ── Desktop relaxation ── */
+@media (min-width: 768px) {
+  :root {
+    --yp-page-pad-x:   1.5rem;
+    --yp-card-pad:     1.25rem;
+    --yp-card-pad-lg:  1.75rem;
+    --yp-list-pad-y:   1.0625rem;
+    --yp-list-pad-x:   1.25rem;
+    --yp-section-gap:  1.75rem;
+    --yp-stack-gap:    0.8125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --yp-page-pad-x: 1.75rem;
+    --yp-section-gap: 2rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* ใช้ light theme เท่านั้น */
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERFORMANCE UTILITIES (สืบทอดจาก ypwork v8.0)
+   ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .login,
+  .today-hero,
+  .detail-hero,
+  .single-hero,
+  .today-hero::before,
+  .today-hero::after,
+  .detail-hero::before,
+  .detail-hero::after,
+  .single-hero::before,
+  .single-hero::after,
+  .login::before,
+  .login::after {
+    animation: none !important;
+  }
+  .yp-hero-enter,
+  .detail-section {
+    animation-duration: 200ms !important;
+  }
+}
+
+.yp-pause-bg,
+.yp-pause-bg::before,
+.yp-pause-bg::after {
+  animation-play-state: paused !important;
+}
+
+.login,
+.today-hero,
+.detail-hero,
+.single-hero {
+  contain: layout style paint;
+}
+
+@supports (content-visibility: auto) {
+  .detail-section,
+  .events-group,
+  .calendar-grid,
+  .list-item,
+  .event-card,
+  .admin-card,
+  .stat-card,
+  .action-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px auto;
+  }
+}
+
+.btn,
+.card,
+.list-item,
+.input,
+.textarea,
+.select,
+.input-group,
+.chip,
+.segmented,
+.segmented__btn,
+.progress,
+.stat,
+.event-card,
+.admin-card,
+.stat-card,
+.action-card,
+.empty,
+.toast,
+.modal {
+  contain: layout style;
+}
+
+.btn,
+.list-item,
+.event-card,
+.admin-card,
+.stat-card,
+.action-card,
+.stat,
+.toast {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.detail-hero,
+.single-hero,
+.today-hero,
+.login {
+  isolation: isolate;
+}
+
+.btn,
+.list-item,
+.event-card,
+.admin-card,
+.card--clickable,
+.segmented__btn,
+.sheet__close,
+.modal__close,
+.top-bar__back,
+.top-bar__avatar,
+.bottom-nav__item {
+  touch-action: manipulation;
+}

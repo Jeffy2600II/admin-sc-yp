@@ -1,0 +1,6660 @@
+/* ═══════════════════════════════════════════════════════════════
+   YP ADMIN · PAGES
+   assets/css/pages.css
+   Login · Dashboard · Departments · Users · Requests · Years · Profile · Form Modal
+   สืบทอดจาก ypwork demo v8.2 — ปรับสี indigo/violet → emerald/teal
+
+   หลักการ:
+   - hero card ใช้ radius hero token (xl=56px) ให้มนเด่น premium
+   - event-card ใช้ radius md (36px) — ห้ามแก้ ผู้ใช้ยืนยันพอดี
+   - ทุก section padding กระชับแต่ radius มนสไตล์ Fantrove
+   - v7.9: ลบ continuous background animations (bg-flow, dust-drift, dot-breathe, glow)
+           แต่คง gradients + patterns เหมือนเดิม 100% → เบาขึ้นมาก เหมาะกับสเปคต่ำ
+           คงเฉพาะ entrance animations (one-shot) ที่ไม่กินทรัพยากรต่อเนื่อง
+   - v7.8: CSS Containment + content-visibility สำหรับ off-screen sections
+   - v7.0: hero entrance animations + accent tinting
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* v7.8: Helper class สำหรับ reduced-motion — คง entrance animation
+ *       แต่ลด duration ลง (200ms แทน 600ms) เพื่อความเร็ว */
+.yp-hero-enter {
+  animation: yp-hero-enter 200ms var(--yp-ease-emphasized-decel) both;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN PAGE
+   ═══════════════════════════════════════════════════════════════ */
+.login {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--yp-gradient-hero);
+  /* v7.2: background-size ใหญ่กว่า element เพื่อให้ bg-flow animation เห็นผล */
+  background-size: 180% 180%, 180% 180%, 100% 100%;
+  position: relative;
+  overflow: hidden;
+  /* v7.2: พื้นหลังไหลช้าๆ */
+}
+
+/* v7.3: อนุภาคฝุ่น scattered — เหมือน hero อื่นๆ */
+.login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.12) 0%, transparent 35%),
+    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 35%),
+    radial-gradient(circle at 2px 2px,   rgba(255,255,255,0.07) 1px,    transparent 0),
+    radial-gradient(circle at 1px 1px,   rgba(255,255,255,0.05) 1.5px,  transparent 0),
+    radial-gradient(circle at 3px 3px,   rgba(255,255,255,0.04) 0.7px,  transparent 0);
+  background-size: auto, auto, 37px 31px, 23px 43px, 17px 19px;
+  pointer-events: none;
+}
+
+/* v7.3: แสงหมอกจางสลับ + เปลี่ยนขนาดอนุภาค — เหมือน hero อื่นๆ */
+.login::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+    radial-gradient(ellipse at center, rgba(45, 212, 191, 0.07) 0%, transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 48%);
+  background-size: 60% 55%, 50% 45%, 45% 42%, 55% 50%;
+  background-position: 20% 25%, 75% 70%, 45% 50%, 70% 20%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login__inner {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--yp-safe-top) + var(--yp-space-8)) var(--yp-page-pad-x) calc(var(--yp-safe-bottom) + var(--yp-space-6));
+  max-width: 460px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.login__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  margin-bottom: var(--yp-space-8);
+}
+
+/* v5.8: ลดมุมโค้ง md→sm (36→28px) ให้ logo ไม่เกือบเป็นวงกลม */
+.login__logo {
+  width: 46px; height: 46px;
+  border-radius: var(--yp-radius-sm);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: var(--yp-fw-extrabold);
+  font-size: var(--yp-text-lg);
+  letter-spacing: -0.02em;
+}
+
+.login__brand-text { color: white; }
+.login__brand-name {
+  font-size: var(--yp-text-lg);
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.01em;
+}
+.login__brand-tag {
+  font-size: var(--yp-text-xs);
+  opacity: 0.75;
+  letter-spacing: 0.02em;
+}
+
+.login__hero {
+  color: white;
+  margin-bottom: var(--yp-space-6);
+}
+
+/* v5.8: เพิ่ม subtle accent glow ที่มุมบนซ้ายให้ login hero มีชีวิตขึ้น */
+.login__hero h1 {
+  color: white;
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  letter-spacing: 0.01em;
+  margin-bottom: var(--yp-space-2);
+  line-height: var(--yp-leading-tight);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.login__hero p {
+  font-size: var(--yp-text-sm);
+  opacity: 0.88;
+  line-height: var(--yp-leading-normal);
+  max-width: 360px;
+}
+
+/* v5.8: ลดมุมโค้ง xl→lg (56→44px) ให้ใกล้เคียง v5.5/v5.6 */
+.login__card {
+  background: white;
+  border-radius: var(--yp-radius-lg);
+  padding: var(--yp-space-6);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.login__card-title {
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  margin-bottom: 2px;
+}
+
+.login__card-sub {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  margin-bottom: var(--yp-space-4);
+}
+
+.login__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  margin: var(--yp-space-5) 0;
+  color: var(--yp-text-faint);
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.login__divider::before,
+.login__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--yp-border-subtle);
+}
+
+.login__hint-title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--yp-emerald-600);
+  margin-bottom: var(--yp-space-3);
+}
+
+.login__hint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login__hint {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast), transform var(--yp-t-fast);
+  text-align: left;
+  width: 100%;
+}
+
+/* v5.8: เพิ่ม subtle transition ให้ hint hover เรียบขึ้น */
+.login__hint:hover {
+  background: var(--yp-bg-indigo-soft);
+  border-color: var(--yp-border-indigo);
+  transform: translateY(-1px);
+  box-shadow: var(--yp-shadow-sm);
+}
+
+.login__hint-avatar {
+  width: 40px; height: 40px;
+  border-radius: var(--yp-radius-pill);
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: var(--yp-shadow-xs);
+  display: block;
+}
+
+.login__hint-avatar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.login__hint-body { flex: 1; min-width: 0; }
+.login__hint-name {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 0;
+  line-height: 1.3;
+}
+.login__hint-role {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+}
+
+.login__hint-action {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-emerald-600);
+  font-weight: var(--yp-fw-semibold);
+  flex-shrink: 0;
+}
+
+.login__footer {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: var(--yp-text-xs);
+  margin-top: var(--yp-space-6);
+}
+
+.login__demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--yp-radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  color: white;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-semibold);
+  margin-bottom: var(--yp-space-4);
+  letter-spacing: 0.04em;
+}
+
+.login__demo-badge::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-amber-400);
+  box-shadow: 0 0 8px var(--yp-amber-400);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   v8.1: LOGIN MODE TOGGLE (นักเรียน / ครู-อื่นๆ)
+   ═══════════════════════════════════════════════════════════════ */
+.login__mode-toggle {
+  display: flex;
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-pill);
+  padding: 4px;
+  gap: 3px;
+  margin-bottom: var(--yp-space-5);
+}
+
+.login__mode-btn {
+  flex: 1;
+  border: none;
+  border-radius: var(--yp-radius-pill);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-weight: var(--yp-fw-bold);
+  font-size: var(--yp-text-sm);
+  cursor: pointer;
+  background: transparent;
+  color: var(--yp-text-secondary);
+  transition: transform var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.login__mode-btn.is-active {
+  background: var(--yp-bg-card);
+  color: var(--yp-emerald-600);
+  box-shadow: var(--yp-shadow-xs);
+}
+
+.login__mode-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* v8.1: ลิงก์ "ส่งคำขอสมัคร" ด้านล่างปุ่มเข้าสู่ระบบ */
+.login__register-link {
+  text-align: center;
+  margin-top: var(--yp-space-4);
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+}
+
+.login__register-link a {
+  color: var(--yp-emerald-600);
+  font-weight: var(--yp-fw-bold);
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.login__register-link a:hover {
+  text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   v8.1: REGISTER PAGE (สร้างบัญชี)
+   ═══════════════════════════════════════════════════════════════ */
+.register {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--yp-gradient-hero);
+  background-size: 180% 180%, 180% 180%, 100% 100%;
+  background-position: 20% 20%, 80% 80%, 0% 0%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* v8.1: ใช้ dust particle pattern เหมือน login */
+.register::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.12) 0%, transparent 35%),
+    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 35%),
+    radial-gradient(circle at 2px 2px,   rgba(255,255,255,0.07) 1px,    transparent 0),
+    radial-gradient(circle at 1px 1px,   rgba(255,255,255,0.05) 1.5px,  transparent 0),
+    radial-gradient(circle at 3px 3px,   rgba(255,255,255,0.04) 0.7px,  transparent 0);
+  background-size: auto, auto, 37px 31px, 23px 43px, 17px 19px;
+  pointer-events: none;
+}
+
+.register::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+    radial-gradient(ellipse at center, rgba(45, 212, 191, 0.07) 0%, transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 48%);
+  background-size: 60% 55%, 50% 45%, 45% 42%, 55% 50%;
+  background-position: 20% 25%, 75% 70%, 45% 50%, 70% 20%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.register__inner {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--yp-safe-top) + var(--yp-space-8)) var(--yp-page-pad-x) calc(var(--yp-safe-bottom) + var(--yp-space-6));
+  max-width: 460px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* v8.1: Register page ใช้คลาสเดียวกับ login เกือบทั้งหมด
+ *       ใช้ .register__ prefix สำหรับ elements เฉพาะ */
+.register__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  margin-bottom: var(--yp-space-6);
+}
+
+.register__back {
+  margin-left: auto;
+  color: white;
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity var(--yp-t-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.register__back:hover {
+  opacity: 1;
+}
+
+/* v8.1: ใช้ .login__card ที่มีอยู่แล้วสำหรับ register ด้วย */
+
+/* v8.1: ประเภท account toggle (student/teacher/other) — 3 ปุ่ม */
+.register__type-toggle {
+  display: flex;
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-pill);
+  padding: 4px;
+  gap: 3px;
+  margin-bottom: var(--yp-space-5);
+}
+
+.register__type-btn {
+  flex: 1;
+  border: none;
+  border-radius: var(--yp-radius-pill);
+  padding: 8px 8px;
+  font-family: inherit;
+  font-weight: var(--yp-fw-bold);
+  font-size: var(--yp-text-xs);
+  cursor: pointer;
+  background: transparent;
+  color: var(--yp-text-secondary);
+  transition: transform var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.register__type-btn.is-active {
+  background: var(--yp-bg-card);
+  color: var(--yp-emerald-600);
+  box-shadow: var(--yp-shadow-xs);
+}
+
+.register__type-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* v8.1: Success state — หลังส่งคำขอสำเร็จ */
+.register__success {
+  text-align: center;
+  padding: var(--yp-space-6) 0;
+}
+
+.register__success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--yp-space-4);
+  border-radius: var(--yp-radius-pill);
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--yp-emerald-500);
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--yp-emerald-500) 30%, transparent);
+}
+
+.register__success-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.register__success-title {
+  font-size: var(--yp-text-lg);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-emerald-500);
+  margin-bottom: var(--yp-space-2);
+}
+
+.register__success-desc {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  line-height: var(--yp-leading-normal);
+  margin-bottom: var(--yp-space-5);
+}
+
+.register__success-actions {
+  display: flex;
+  gap: var(--yp-space-2);
+  justify-content: center;
+}
+
+/* v8.1: Demo hint สำหรับครู/อื่นๆ ในหน้า login */
+.login__hint--teacher .login__hint-avatar {
+  background: var(--yp-bg-card-soft);
+}
+
+.login__hint--other .login__hint-avatar {
+  background: var(--yp-bg-card-soft);
+}
+
+.login__hint-type {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: var(--yp-radius-pill);
+  font-size: 10px;
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.04em;
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--yp-emerald-600);
+}
+
+.login__hint-type--teacher {
+  background: color-mix(in srgb, var(--yp-amber-500) 14%, transparent);
+  color: #B45309;
+}
+
+.login__hint-type--other {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0284C7;
+}
+
+.login__hint-type--student {
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--yp-emerald-600);
+}
+
+/* v8.1: Section title สำหรับแยก hints ตามประเภท */
+.login__hint-section-title {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--yp-text-muted);
+  margin-top: var(--yp-space-4);
+  margin-bottom: var(--yp-space-2);
+  padding-left: 4px;
+}
+
+.login__hint-section-title:first-of-type {
+  margin-top: 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TODAY DASHBOARD — hero มนมาก + เปิด padding ให้หายใจ
+ * v5.3: ปรับให้ modern minimal — ลด contrast ของ gradient ลง
+ * ลด busy radial overlays เพิ่ม whitespace ให้ "หายใจ" มากขึ้น
+ * stat tiles ใช้ solid white แทน glass blur (ประหยัดทรัพยากร
+ * และดูเป็น modern minimal มากกว่า frosted glass ที่ดู "ทื่อ")
+   ═══════════════════════════════════════════════════════════════ */
+/* v7.0: Hero entrance keyframes — fade + slide up, premium feel */
+@keyframes yp-hero-enter {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* v7.9: Background animations removed (bg-flow, dust-drift, dot-breathe, glow)
+ *       พื้นหลังทุกอย่างยังเหมือนเดิม (gradient + dust particles + glow spots)
+ *       แต่ไม่ขยับแล้ว → ประหยัดทรัพยากร 100%
+ *       คงไว้เฉพาะ entrance animations (yp-hero-enter) ที่เป็น one-shot */
+
+.today-hero {
+  background: var(--yp-gradient-brand);
+  /* v7.1: background-size ใหญ่กว่า element เพื่อให้ bg-flow animation เห็นผล */
+  background-size: 180% 180%, 180% 180%, 100% 100%;
+  color: white;
+  border-radius: var(--yp-radius-hero);
+  /* v6.1: คืน padding เป็นค่าที่สมดุล — ไม่เพิ่มเกินจน tile เบียด */
+  padding: var(--yp-space-8) var(--yp-space-6) var(--yp-space-8);
+  margin-bottom: var(--yp-space-6);
+  box-shadow: var(--yp-shadow-indigo);
+  position: relative;
+  overflow: hidden;
+  /* v7.1: entrance + bg-flow — พื้นหลังไหลช้าๆ */
+  animation:
+    yp-hero-enter var(--yp-hero-enter) both;
+}
+
+/* v7.3: อนุภาคฝุ่น scattered — ไม่เรียงระเบียบ ขนาดต่างกัน
+ * 3 layers ของ radial-gradient dots ที่ background-size ต่างกัน
+ * ใช้ค่า prime-ish (37,31,23,43,17,19) ทำลาย pattern ให้ดู organic
+ * + micro-drift animation ขยับ ~1-2px เหมือนฝุ่นลอยในแสง */
+.today-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 2px 2px,   rgba(255,255,255,0.09) 1px,    transparent 0),
+    radial-gradient(circle at 1px 1px,   rgba(255,255,255,0.06) 1.5px,  transparent 0),
+    radial-gradient(circle at 3px 3px,   rgba(255,255,255,0.05) 0.7px,  transparent 0);
+  background-size: auto, 37px 31px, 23px 43px, 17px 19px;
+  pointer-events: none;
+}
+
+/* v7.3: แสงหมอกจางสลับ + เปลี่ยนขนาดอนุภาค (bloom effect)
+ * เมื่อ blob อยู่เหนืออนุภาค → สว่างขึ้น + ดูใหญ่ขึ้น
+ * เมื่อ blob ห่างออก → จางลง + ดูเล็กลง */
+.today-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+    radial-gradient(ellipse at center, rgba(45, 212, 191, 0.07) 0%, transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 48%);
+  background-size: 60% 55%, 50% 45%, 45% 42%, 55% 50%;
+  background-position: 20% 25%, 75% 70%, 45% 50%, 70% 20%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.today-hero__content {
+  position: relative;
+  z-index: 1;
+  /* v7.0: stagger children entrance */
+  display: flex;
+  flex-direction: column;
+}
+
+.today-hero__content > * {
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+}
+.today-hero__content > :nth-child(1) { animation-delay: calc(var(--yp-hero-stagger) * 1); }
+.today-hero__content > :nth-child(2) { animation-delay: calc(var(--yp-hero-stagger) * 2); }
+.today-hero__content > :nth-child(3) { animation-delay: calc(var(--yp-hero-stagger) * 3); }
+.today-hero__content > :nth-child(4) { animation-delay: calc(var(--yp-hero-stagger) * 4); }
+
+.today-hero__greeting {
+  font-size: var(--yp-text-sm);
+  opacity: 0.78;
+  /* v5.3: เพิ่ม margin ล่าง (4→6px) ให้หายใจระหว่าง greeting กับ name */
+  margin-bottom: 6px;
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* v5.8: เพิ่ม subtle text-shadow ให้ hero text อ่านง่ายขึ้นบน gradient */
+.today-hero__name {
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  letter-spacing: 0.005em;
+  margin-bottom: 6px;  /* v6.1: คืนเป็น 6px ไม่ต้องเพิ่ม */
+  line-height: 1.18;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.10);
+}
+
+.today-hero__date {
+  font-size: var(--yp-text-sm);
+  opacity: 0.82;
+  /* v6.1: คืน margin-bottom ก่อนเข้า stat grid — ไม่ต้องห่างเกิน */
+  margin-bottom: var(--yp-space-4);
+  letter-spacing: 0.015em;
+}
+
+.today-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  /* v6.1: ลด gap กลับเป็น space-2 (8px) — ให้ tile กว้างขึ้น ข้อความไม่ถูกตัด */
+  gap: var(--yp-space-2);
+}
+
+/* v6.1: stat tiles ปรับให้สมส่วน — ลด padding/gap ที่เพิ่มเกิน
+ * - ลด padding กลับเป็นค่าพอดี ไม่ให้ tile แคบเกินจนข้อความถูกตัด
+ * - ใช้ word-break: keep-all เพื่อไม่ตัดคำภาษาไทยกลางคำ
+ * - เพิ่มขนาด label จาก 11px เป็น 12px ให้อ่านง่ายขึ้น */
+.today-hero__stat {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: var(--yp-radius-sm);
+  padding: var(--yp-space-3) var(--yp-space-2);  /* v6.1: ลด padding ให้ tile กว้างขึ้น */
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  min-height: 72px;  /* v6.1: ลดจาก 88px ให้สมส่วน */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* v5.5: subtle dot pattern บนแต่ละ tile — ให้ความรู้สึก "premium" ไม่ทื่อ */
+/* v7.3: อนุภาคฝุ่น scattered — เหมือน hero แต่เล็กกว่า */
+.today-hero__stat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.10) 0.8px, transparent 0),
+    radial-gradient(circle at 1px 1px,     rgba(255, 255, 255, 0.06) 1.2px,  transparent 0);
+  background-size: 19px 17px, 13px 23px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* v7.0: stat tile entrance — staggered pop-in */
+.today-hero__stat {
+  animation: yp-hero-enter 400ms var(--yp-ease-bounce) both;
+}
+.today-hero__stat:nth-child(1) { animation-delay: calc(var(--yp-hero-stagger) * 5); }
+.today-hero__stat:nth-child(2) { animation-delay: calc(var(--yp-hero-stagger) * 6); }
+.today-hero__stat:nth-child(3) { animation-delay: calc(var(--yp-hero-stagger) * 7); }
+
+/* v5.8: เพิ่ม text-shadow ให้ stat value อ่านง่ายขึ้น */
+.today-hero__stat-value {
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.today-hero__stat-label {
+  font-size: var(--yp-text-xs);  /* v6.1: คืนเป็น 12px — 11px เล็กเกิน อ่านยาก */
+  opacity: 0.82;
+  margin-top: 4px;
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.02em;
+  word-break: keep-all;  /* ไม่ตัดคำภาษาไทยกลางคำ */
+  line-height: 1.3;
+}
+
+/* v6.1: คืน section gap เป็น space-6 (24px) — ไม่ต้องห่างเกิน */
+.today-section + .today-section { margin-top: var(--yp-space-6); }
+
+.today-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--yp-space-3);
+  /* v6.1: คืน margin-bottom เป็น space-4 — ไม่ต้องห่างเกิน */
+  margin-bottom: var(--yp-space-4);
+}
+
+.today-section__title {
+  font-size: var(--yp-h3-size);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  letter-spacing: 0.005em;
+  line-height: 1.3;
+}
+
+.today-section__count {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-bold);
+  background: var(--yp-bg-card);
+  padding: 5px 14px;
+  border-radius: var(--yp-radius-pill);
+  border: 1px solid var(--yp-border-subtle);
+  letter-spacing: 0.02em;
+}
+
+/* Event card — clean, breathable pattern (CSS ตัวเดียวใช้ทั้ง home + jobs + day)
+ * v6.0: radius คงไว้ (md=36px) ตามที่ผู้ใช้ยืนยันว่าพอดีแล้ว
+ * title ใช้ 15px (ระหว่าง sm 14 กับ base 16) ใกล้เคียง v5.4 แต่ไม่ใหญ่เกิน
+ * v6.0: shadow ถอดออก ให้ border ทำหน้าที่ → minimal */
+.event-card {
+  display: block;
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);  /* ห้ามแก้ — ผู้ใช้ยืนยันว่าพอดีแล้ว */
+  padding: var(--yp-space-6) var(--yp-space-5);
+  cursor: pointer;
+  /* v8.2: นำ transition แบบเต็มกลับมา (background + border + box-shadow + transform)
+   *       เพื่อให้ hover/active แสดงผล accent tint + border + shadow เหมือนเดิม */
+  transition:
+    background-color var(--yp-t-fast),
+    border-color var(--yp-t-fast),
+    box-shadow var(--yp-t-fast),
+    transform 180ms var(--yp-ease-standard);
+  position: relative;
+  overflow: hidden;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  /* v7.0: entrance animation */
+  animation: yp-hero-enter var(--yp-card-enter) both;
+}
+
+/* v5.5: subtle accent halo ที่มุมบน-ขวา — สีตาม event color
+ * ทำให้ card มี "เอกลักษณ์" และดู premium ไม่ใช่กระดาษว่าง ๆ */
+.event-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent, #0EA5E9) 0%, transparent 70%);
+  opacity: 0.05;
+  pointer-events: none;
+  /* v8.2: halo เด่นขึ้นตอน hover */
+  transition: opacity var(--yp-t-fast);
+}
+
+/* v5.3: accent bar บอบบางลง — width 4→3px, ขยาย top/bottom (18→22)
+ * ให้ดูเป็น accent บางๆ ไม่ใช่แถบใหญ่ */
+.event-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 22px; bottom: 22px;
+  width: 3px;
+  background: var(--accent, var(--yp-gradient-brand-flat));
+  border-radius: 0 3px 3px 0;
+  /* v8.2: accent bar ขยายตอน hover */
+  transition: top var(--yp-t-fast), bottom var(--yp-t-fast);
+}
+
+/* v8.2: นำ hover effect แบบเดิมกลับมา — accent tint + border + shadow + transform */
+.event-card:hover {
+  background: color-mix(in srgb, var(--accent, #0EA5E9) 4%, var(--yp-bg-card));
+  border-color: color-mix(in srgb, var(--accent, #0EA5E9) 28%, transparent);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent, #0EA5E9) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+/* v8.2: halo เด่นขึ้นตอน hover */
+.event-card:hover::after {
+  opacity: 0.10;
+}
+
+/* v8.2: accent bar ขยายเต็มความสูงตอน hover */
+.event-card:hover::before {
+  top: 0;
+  bottom: 0;
+}
+
+/* v8.2: นำ active effect แบบเดิมกลับมา — accent tint ลึกขึ้น + transform scale */
+.event-card:active {
+  background: color-mix(in srgb, var(--accent, #0EA5E9) 8%, var(--yp-bg-card));
+  border-color: color-mix(in srgb, var(--accent, #0EA5E9) 40%, transparent);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent, #0EA5E9) 12%, transparent);
+  transform: scale(0.985);
+}
+
+.event-card + .event-card { margin-top: var(--yp-space-4); }  /* v6.1: คืนเป็น space-4 */
+
+.event-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+}
+
+.event-card__icon {
+  flex-shrink: 0;
+  width: 42px; height: 42px;
+  border-radius: var(--yp-radius-sm);
+  display: grid;
+  place-items: center;
+}
+.event-card__icon svg { width: 20px; height: 20px; stroke-width: 2; }
+
+.event-card__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: var(--yp-space-2);
+}
+
+.event-card__title {
+  font-size: 0.9375rem;    /* 15px — ระหว่าง sm (14) กับ base (16), ใกล้เคียง v5.4 แต่ไม่ใหญ่เกิน */
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-card__meta {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+.event-card__progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: var(--yp-space-3);
+  padding-left: 58px;  /* aligns with .event-card__main (icon 42 + gap 12 + 4) */
+}
+
+.event-card__progress-bar {
+  flex: 1;
+  height: 6px;
+}
+
+.event-card__progress-text {
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-emerald-600);
+  font-size: var(--yp-text-xs);
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CALENDAR VIEW (v5.4 — เขียนใหม่ให้สู้หน้าอื่นได้)
+   ───────────────────────────────────────────────────────────────
+   หลักการออกแบบ:
+   - cal-hero เป็น hero block จริง ๆ (ไม่ใช่แค่ toolbar) — เหมือน
+     today-hero / detail-hero แต่ compact กว่า เพื่อเก็บพื้นที่ให้ grid
+   - cal-grid ใช้ radius lg + overflow hidden + shadow sm
+   - cal-day มี padding มากขึ้น, hover state นุ่มขึ้น, today highlight
+     เด่นขึ้นด้วย gradient brand
+   - cal-day__event ใช้ --ev-color (สีจริงของงาน) แทน indigo ตายตัว
+   - cal-legend auto-generate จากสีของงานในเดือนนั้น
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── HERO (toolbar + month title รวมเป็น block เดียว) ── */
+.cal-hero {
+  background: var(--yp-gradient-brand);
+  /* v7.1: background-size ใหญ่กว่า element เพื่อให้ bg-flow animation เห็นผล */
+  background-size: 180% 180%, 180% 180%, 100% 100%;
+  color: white;
+  border-radius: var(--yp-radius-hero);
+  padding: var(--yp-space-6) var(--yp-space-6) var(--yp-space-7);  /* v5.9: เพิ่ม padding */
+  margin-bottom: var(--yp-space-6);  /* v5.9: เพิ่ม margin */
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--yp-shadow-indigo);
+  /* v7.1: entrance + bg-flow — พื้นหลังไหลช้าๆ */
+  animation:
+    yp-hero-enter var(--yp-hero-enter) both;
+}
+
+/* v7.3: อนุภาคฝุ่น scattered — เหมือน today-hero */
+.cal-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 2px 2px,   rgba(255,255,255,0.09) 1px,    transparent 0),
+    radial-gradient(circle at 1px 1px,   rgba(255,255,255,0.06) 1.5px,  transparent 0),
+    radial-gradient(circle at 3px 3px,   rgba(255,255,255,0.05) 0.7px,  transparent 0);
+  background-size: auto, 37px 31px, 23px 43px, 17px 19px;
+  pointer-events: none;
+}
+
+/* v7.3: แสงหมอกจางสลับ + เปลี่ยนขนาดอนุภาค — เหมือน today-hero */
+.cal-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+    radial-gradient(ellipse at center, rgba(45, 212, 191, 0.07) 0%, transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 48%);
+  background-size: 60% 55%, 50% 45%, 45% 42%, 55% 50%;
+  background-position: 20% 25%, 75% 70%, 45% 50%, 70% 20%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cal-hero__bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yp-space-3);
+  margin-bottom: var(--yp-space-4);
+}
+
+.cal-hero__nav {
+  width: 40px; height: 40px;
+  border-radius: var(--yp-radius-sm);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: grid;
+  place-items: center;
+  color: white;
+  cursor: pointer;
+  transition: background var(--yp-t-fast), transform var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-hero__nav:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.cal-hero__nav:active { transform: scale(0.94); }
+.cal-hero__nav svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.cal-hero__today {
+  padding: 9px 16px;
+  border-radius: var(--yp-radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  color: white;
+  font-family: inherit;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--yp-t-fast), transform var(--yp-t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-hero__today:hover {
+  background: rgba(255, 255, 255, 0.30);
+}
+.cal-hero__today:active { transform: scale(0.96); }
+
+.cal-hero__title-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.cal-hero__eyebrow {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+/* v5.8: เพิ่ม text-shadow ให้ cal hero title */
+.cal-hero__title {
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  letter-spacing: 0.005em;
+  line-height: 1.15;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.10);
+}
+
+/* ── GRID (ปฏิทินจริง ๆ) ── */
+/* v6.0: shadow ถอดออก minimal */
+.cal-grid {
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-lg);
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--yp-bg-card-soft);
+  border-bottom: 1px solid var(--yp-border-subtle);
+}
+
+.cal-weekday {
+  padding: var(--yp-space-3) 4px;
+  text-align: center;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cal-weekday.is-weekend { color: var(--yp-rose-500); }
+
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  /* v5.4: สูงขึ้นนิด (64→76) ให้มีที่ใส่ event chip แบบสวย */
+  grid-auto-rows: 76px;
+}
+
+.cal-day {
+  padding: var(--yp-space-2) 4px;
+  border-right: 1px solid var(--yp-border-subtle);
+  border-bottom: 1px solid var(--yp-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  transition: background var(--yp-t-fast);
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-day:nth-child(7n) { border-right: none; }
+
+.cal-day:hover { background: var(--yp-bg-card-soft); }
+.cal-day.is-other-month { background: var(--yp-bg-card-soft); opacity: 0.45; }
+.cal-day.is-other-month:hover { background: var(--yp-bg-card); }
+.cal-day.is-weekend .cal-day__num { color: var(--yp-rose-500); }
+
+/* Today highlight — gradient brand + lift เล็กน้อย */
+.cal-day.is-today {
+  background: rgba(14, 165, 233, 0.04);
+}
+.cal-day.is-today .cal-day__num {
+  background: var(--yp-gradient-brand-flat);
+  color: white;
+  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.30);
+}
+
+.cal-day__num {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  width: 26px; height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--yp-radius-pill);
+  color: var(--yp-text-strong);
+  letter-spacing: -0.01em;
+  align-self: flex-start;
+}
+
+.cal-day__events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.cal-day__event {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 6px 2px 4px;
+  border-radius: var(--yp-radius-pill);
+  background: color-mix(in srgb, var(--ev-color, #0EA5E9) 12%, white);
+  color: color-mix(in srgb, var(--ev-color, #0EA5E9) 80%, black);
+  font-weight: var(--yp-fw-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.4;
+  border: 1px solid color-mix(in srgb, var(--ev-color, #0EA5E9) 18%, transparent);
+}
+
+.cal-day__event-dot {
+  width: 5px; height: 5px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--ev-color, #0EA5E9);
+  flex-shrink: 0;
+}
+
+.cal-day__event-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-day__event--task {
+  /* เหมือนกัน — ใช้สีจริงของงาน แค่เพิ่ม style ให้ dot เป็น ring แทน solid */
+  background: color-mix(in srgb, var(--ev-color, #F59E0B) 10%, white);
+}
+.cal-day__event--task .cal-day__event-dot {
+  background: transparent;
+  border: 1.5px solid var(--ev-color, #F59E0B);
+  box-sizing: border-box;
+}
+
+.cal-day__more {
+  font-size: 10px;
+  color: var(--yp-text-muted);
+  padding-left: 4px;
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.01em;
+}
+
+/* Mobile — ซ่อน event chips, โชว์แค่ dots */
+@media (max-width: 480px) {
+  .cal-day { padding: 4px 2px; }
+  .cal-days { grid-auto-rows: 56px; }
+  .cal-day__events { display: none; }
+  .cal-day__num { width: 22px; height: 22px; font-size: 10px; }
+  .cal-weekday { padding: var(--yp-space-2) 2px; font-size: 10px; letter-spacing: 0.04em; }
+}
+
+/* Calendar dots indicator (mobile) */
+.cal-day__dots {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+  padding-left: 2px;
+}
+.cal-day__dot {
+  width: 5px; height: 5px;
+  border-radius: var(--yp-radius-pill);
+}
+
+@media (min-width: 481px) {
+  .cal-day__dots { display: none; }
+}
+
+/* ── LEGEND ── */
+.cal-legend {
+  display: flex;
+  gap: var(--yp-space-3);
+  flex-wrap: wrap;
+  margin-top: var(--yp-space-5);
+  padding: var(--yp-space-4) var(--yp-space-5);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);
+  box-shadow: var(--yp-shadow-xs);
+}
+
+.cal-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-secondary);
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.01em;
+}
+
+.cal-legend__dot {
+  width: 8px; height: 8px;
+  border-radius: var(--yp-radius-pill);
+  flex-shrink: 0;
+}
+
+.cal-legend__label {
+  white-space: nowrap;
+}
+
+.cal-legend__empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.01em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   EVENTS LIST
+   v5.5: ปรับ events-filter ให้เป็น "pill cluster" ที่ดูลึกและ premium
+   มากขึ้น — ใช้ inline pill ที่มี chip-like styling แทน loose buttons
+   ═══════════════════════════════════════════════════════════════ */
+.events-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: var(--yp-space-6);
+  overflow-x: auto;
+  padding: 4px 0 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+.events-filter::-webkit-scrollbar { display: none; }
+
+/* v5.5: filter buttons ใช้ chip-style ที่สม่ำเสมอกับ chip อื่น ๆ ในระบบ
+ * ไม่ใช่ segmented__btn แบบเดิม ที่ดูเพี้ยนเวลาไม่ได้อยู่ใน .segmented wrapper */
+.events-filter .segmented__btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  color: var(--yp-text-secondary);
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.005em;
+  box-shadow: var(--yp-shadow-xs);
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast), color var(--yp-t-fast);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.events-filter .segmented__btn:hover {
+  background: var(--yp-bg-card-soft);
+  border-color: var(--yp-border-indigo);
+  color: var(--yp-emerald-600);
+}
+
+.events-filter .segmented__btn.is-active {
+  background: var(--yp-gradient-brand-flat);
+  border-color: transparent;
+  color: white;
+  box-shadow: var(--yp-shadow-indigo);
+  font-weight: var(--yp-fw-bold);
+}
+
+.events-group {
+  margin-bottom: var(--yp-space-7);
+}
+
+.events-group__label {
+  position: sticky;
+  top: calc(var(--yp-nav-top-h) + var(--yp-safe-top));
+  background: var(--yp-bg-page);
+  padding: var(--yp-space-3) 0;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  color: var(--yp-text-secondary);
+  margin-bottom: var(--yp-space-4);
+  z-index: 1;
+  letter-spacing: 0.09em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   EVENT DETAIL (กลุ่มงาน) — hero ที่ modern minimal ขึ้น
+ * v5.4: เพิ่ม pattern overlay (subtle dot grid) ให้ hero ไม่ "ทื่อ"
+ * ปรับ type chip ให้เป็น glass นุ่มขึ้น พร้อม icon
+ * ปรับ meta ให้ใช้ separator แทน gap ล้วน ๆ → อ่านง่ายขึ้น
+ * โครงสร้าง hero ของ group/single share pattern เดียวกัน
+   ═══════════════════════════════════════════════════════════════ */
+.detail-hero {
+  /* v7.4: accent-driven gradient — สีของ hero ตรงกับสีของงาน
+   *       3-stop layered: radial overlays + linear base
+   *       ใช้ color-mix ผสมกับ #022C22 (indigo-950) เพื่อให้สีเข้มพอที่ white text จะอ่านได้
+   *       กับทุก accent รวมถึง amber ที่อ่อน */
+  background:
+    radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent, #0EA5E9) 55%, transparent) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, color-mix(in srgb, var(--accent, #0EA5E9) 75%, transparent) 0%, transparent 60%),
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent, #0EA5E9) 85%, #022C22) 0%,
+      color-mix(in srgb, var(--accent, #0EA5E9) 62%, #064E3B) 100%);
+  /* v7.1: background-size ใหญ่กว่า element เพื่อให้ bg-flow animation เห็นผล */
+  background-size: 180% 180%, 180% 180%, 100% 100%;
+  color: white;
+  border-radius: var(--yp-radius-hero);
+  padding: var(--yp-space-8) var(--yp-space-6) var(--yp-space-6);  /* v6.1: ลด padding ลง — ไม่ต้องเยอะเกิน */
+  margin-bottom: var(--yp-space-6);  /* v6.1: ลด margin */
+  position: relative;
+  overflow: hidden;
+  /* v7.4: shadow ใช้ accent-tinted แทน indigo ตายตัว — กลมกลืนกับสีของงาน */
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--accent, #0EA5E9) 22%, transparent),
+    0 1px 3px color-mix(in srgb, var(--accent, #0EA5E9) 10%, transparent);
+  /* v7.4: ปรับ entrance + bg-flow ให้ลื่นขึ้นด้วย emphasized easing */
+  animation:
+    yp-hero-enter var(--yp-hero-enter) both;
+}
+
+/* v7.3: อนุภาคฝุ่น scattered — เหมือน today-hero */
+.detail-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 2px 2px,   rgba(255,255,255,0.10) 1px,    transparent 0),
+    radial-gradient(circle at 1px 1px,   rgba(255,255,255,0.07) 1.5px,  transparent 0),
+    radial-gradient(circle at 3px 3px,   rgba(255,255,255,0.05) 0.7px,  transparent 0);
+  background-size: auto, 37px 31px, 23px 43px, 17px 19px;
+  pointer-events: none;
+}
+
+/* v5.4: accent glow ที่มุมล่าง-ซ้าย สีตาม event color
+ * ให้ความรู้สึกว่า hero "เป็นของ" event นี้ ไม่ใช่ template
+ * v7.2: glow หายใจอย่างเดียว (ไม่เคลื่อนที่แล้ว) — ลบเงาวิ่ง */
+.detail-hero::after {
+  content: '';
+  position: absolute;
+  left: -40px; bottom: -40px;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent, #0EA5E9) 0%, transparent 70%);
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  /* v7.2: breathing only — ไม่เคลื่อนที่ */
+}
+
+.detail-hero__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px 7px 10px;
+  border-radius: var(--yp-radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  margin-bottom: var(--yp-space-5);
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* v7.0: entrance */
+  animation: yp-hero-enter 400ms var(--yp-ease-bounce) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 1);
+}
+
+.detail-hero__type svg { width: 14px; height: 14px; }
+
+/* v5.8: เพิ่ม text-shadow ให้ detail hero title */
+.detail-hero__title {
+  font-size: var(--yp-text-3xl, 1.75rem);
+  font-weight: var(--yp-fw-extrabold);
+  color: white;
+  letter-spacing: -0.005em;
+  margin-bottom: var(--yp-space-5);
+  line-height: 1.18;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 2);
+}
+
+.detail-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2) var(--yp-space-3);
+  font-size: var(--yp-text-sm);
+  opacity: 0.94;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 3);
+}
+
+.detail-hero__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.005em;
+}
+
+.detail-hero__meta-item svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.85;
+}
+
+/* Separator dot between meta items */
+.detail-hero__meta-item + .detail-hero__meta-item::before {
+  content: '·';
+  margin-right: 2px;
+  opacity: 0.5;
+  font-weight: bold;
+}
+
+/* v5.3: เพิ่ม breathing room อีก — section gap มากขึ้น (7→8) */
+.detail-section {
+  margin-bottom: var(--yp-space-8);  /* v6.1: คืนจาก space-10 */
+  /* v7.0: entrance animation */
+  /* v7.4: ใช้ emphasized-decel ลื่นกว่าเดิม */
+  animation: yp-hero-enter var(--yp-card-enter) var(--yp-ease-emphasized-decel) both;
+}
+
+/* v7.0: Stagger detail sections */
+.detail-section:nth-child(2) { animation-delay: 60ms; }
+.detail-section:nth-child(3) { animation-delay: 120ms; }
+.detail-section:nth-child(4) { animation-delay: 180ms; }
+.detail-section:nth-child(5) { animation-delay: 240ms; }
+
+.detail-section__title {
+  font-size: var(--yp-h3-size);
+  font-weight: var(--yp-fw-bold);
+  /* v7.0: ใช้ accent tint แทน heading ธรรมดา — ให้สีตามงาน แต่ไม่มากเกิน */
+  color: color-mix(in srgb, var(--accent, var(--yp-text-heading)) 30%, var(--yp-text-heading));
+  /* v6.1: margin-bottom คืนเป็น space-4 */
+  margin-bottom: var(--yp-space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--yp-space-3);
+  letter-spacing: 0.005em;
+}
+
+.detail-section__count {
+  font-size: var(--yp-text-xs);
+  /* v7.0: ใช้ accent color แทน indigo ตายตัว */
+  color: var(--accent, var(--yp-emerald-600));
+  font-weight: var(--yp-fw-bold);
+  background: var(--yp-bg-card);
+  padding: 4px 12px;
+  border-radius: var(--yp-radius-pill);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 22%, transparent);
+  letter-spacing: 0.02em;
+}
+
+/* Task list card — รวม list + add button เป็นบล็อกเดียว
+ * v7.0: เพิ่ม accent-tinted border */
+.card--tasklist {
+  padding: 10px var(--yp-space-5) 14px;
+  border-color: color-mix(in srgb, var(--accent, var(--yp-border-subtle)) 14%, var(--yp-border-subtle));
+}
+
+/* Empty state inside task list */
+.task-empty {
+  text-align: center;
+  padding: var(--yp-space-6) var(--yp-space-4) var(--yp-space-5);  /* v6.1: ลด padding ลง */
+  color: var(--yp-text-muted);
+}
+.task-empty__icon {
+  width: 46px; height: 46px;
+  margin: 0 auto var(--yp-space-3);
+  border-radius: var(--yp-radius-sm);
+  /* v7.0: accent-aware */
+  background: var(--yp-bg-card-soft);
+  color: var(--accent, var(--yp-emerald-600));
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 20%, transparent);
+}
+.task-empty__icon svg { width: 20px; height: 20px; }
+.task-empty__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 4px;
+}
+.task-empty__desc {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  line-height: 1.5;
+}
+
+/* Add-task button — dashed, full-width, breathable */
+.add-task-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 20px;  /* v5.9: เพิ่มจาก 14px 18px */
+  margin-top: var(--yp-space-3);  /* v5.9: ใช้ token แทน hardcode */
+  border: 1.5px dashed var(--yp-border-indigo);
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  font-family: inherit;
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  cursor: pointer;
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast), color var(--yp-t-fast);
+  letter-spacing: 0.01em;
+}
+.add-task-btn:hover {
+  background: rgba(14, 165, 233, 0.12);
+  border-color: var(--yp-emerald-500);
+  color: var(--yp-emerald-700);
+}
+.add-task-btn:active { transform: scale(0.99); }
+.add-task-btn svg { width: 14px; height: 14px; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE — vanilla, Indigo Trust themed
+   ═══════════════════════════════════════════════════════════════
+   - hero card: gradient brand + SVG avatar (copy-resistant)
+   - stats: 2x2 grid + completion progress bar
+   - section card: radius lg, header + body
+   - info rows: dl/dt/dd (semantic)
+   - actions: list buttons with icon + text + chevron
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Profile: กัน copy ข้อความทั้งหน้า ── */
+.profile-page,
+.profile-page * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ── Avatar / name / role ใน top-bar ก็กัน copy ── */
+.top-bar__avatar,
+.top-bar__avatar *,
+[data-no-copy] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ── Page container spacing ── */
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yp-space-5);
+  padding-bottom: var(--yp-space-8);
+}
+
+/* ── HERO ──
+ * v5.4: ปรับ profile-hero ให้ modern minimal มากขึ้น
+ * - มี dot pattern overlay เหมือน today-hero / detail-hero
+ * - เพิ่ม accent glow ที่มุมบน
+ * - avatar ใหญ่ขึ้น 96 → 104px + glow ring
+ * - chip อยู่ใน glass style */
+.profile-hero {
+  position: relative;
+  background: var(--yp-gradient-brand);
+  /* v7.1: background-size ใหญ่กว่า element เพื่อให้ bg-flow animation เห็นผล */
+  background-size: 180% 180%, 180% 180%, 100% 100%;
+  color: white;
+  border-radius: var(--yp-radius-hero);
+  padding: var(--yp-space-8) var(--yp-space-6) var(--yp-space-6);  /* v6.1: ลด padding ลง */
+  text-align: center;
+  overflow: hidden;
+  box-shadow: var(--yp-shadow-indigo);
+  isolation: isolate;
+  /* v7.1: entrance + bg-flow — พื้นหลังไหลช้าๆ */
+  animation:
+    yp-hero-enter var(--yp-hero-enter) both;
+}
+
+/* v7.3: อนุภาคฝุ่น scattered + แสงหมอกจางสลับ + เปลี่ยนขนาด
+ * รวม dust particles + breathe blobs ใน element เดียว
+ * เพราะ profile-hero ไม่มี pseudo-element ว่าง */
+.profile-hero__glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.22) 0%, transparent 55%),
+    radial-gradient(circle at 2px 2px,   rgba(255,255,255,0.10) 1px,    transparent 0),
+    radial-gradient(circle at 1px 1px,   rgba(255,255,255,0.07) 1.5px,  transparent 0),
+    radial-gradient(circle at 3px 3px,   rgba(255,255,255,0.05) 0.7px,  transparent 0),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(45, 212, 191, 0.07) 0%, transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 48%);
+  background-size: auto, 37px 31px, 23px 43px, 17px 19px, 60% 55%, 45% 42%, 55% 50%;
+  background-position: 0% 0%, 0px 0px, 0px 0px, 0px 0px, 20% 25%, 45% 50%, 70% 20%;
+  pointer-events: none;
+  z-index: -1;
+  /* v7.3: dust-drift + dot-breathe รวม */
+}
+
+/* v5.4: avatar ใหญ่ขึ้น 96 → 104px + glow ring */
+.profile-hero__avatar {
+  width: 104px;
+  height: 104px;
+  margin: 0 auto var(--yp-space-5);
+  border-radius: var(--yp-radius-pill);
+  background: rgba(255, 255, 255, 0.22);
+  border: 3px solid rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.20),
+              0 0 0 6px rgba(255, 255, 255, 0.08);
+  position: relative;
+  z-index: 1;
+  /* v7.0: entrance */
+  animation: yp-hero-enter 500ms var(--yp-ease-bounce) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 1);
+}
+
+.profile-hero__avatar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* v5.8: เพิ่ม text-shadow ให้ profile hero name */
+.profile-hero__name {
+  color: white;
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  letter-spacing: 0.005em;
+  margin: 0 0 6px;
+  line-height: var(--yp-leading-tight);
+  word-break: break-word;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.10);
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 2);
+}
+
+.profile-hero__role {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: var(--yp-text-sm);
+  letter-spacing: 0.02em;
+  margin: 0 0 var(--yp-space-4);
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 3);
+}
+
+/* v5.4: chip อยู่ใน glass style พร้อม icon dot */
+.profile-hero__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--yp-radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: white;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 4);
+}
+
+/* ── STATS ── */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--yp-space-3);  /* v6.1: คืนจาก space-4 */
+}
+
+@media (min-width: 480px) {
+  .profile-stats { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* v5.8: เพิ่ม inset highlight ให้ profile-stat ดูเป็น card ที่ลอยขึ้นมา */
+.profile-stat {
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);
+  padding: var(--yp-space-4) var(--yp-space-3);  /* v6.1: ลด padding */
+  text-align: center;
+  box-shadow: var(--yp-shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;  /* v6.1: คืนจาก 6px */
+  transition: border-color var(--yp-t-fast), background var(--yp-t-fast), box-shadow var(--yp-t-fast);
+  /* v7.0: entrance animation */
+  animation: yp-hero-enter var(--yp-card-enter) both;
+}
+
+.profile-stat__value {
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-text-strong);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.profile-stat__label {
+  font-size: var(--yp-text-xs);  /* v6.1: คืนจาก 11px → 12px อ่านง่ายขึ้น */
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-stat--success .profile-stat__value { color: var(--yp-emerald-500); }
+.profile-stat--warning .profile-stat__value { color: var(--yp-amber-500); }
+
+/* ── PROGRESS ── */
+/* v5.8: เพิ่ม inset highlight ให้ profile-progress */
+.profile-progress {
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);
+  padding: var(--yp-space-4) var(--yp-space-5);
+  box-shadow: var(--yp-shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.profile-progress__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--yp-space-3);
+}
+
+.profile-progress__label {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-heading);
+}
+
+.profile-progress__pct {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-emerald-600);
+  letter-spacing: -0.01em;
+}
+
+/* ── SECTION CARD ── */
+.profile-section {
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-lg);
+  box-shadow: var(--yp-shadow-xs);
+  overflow: hidden;
+}
+
+.profile-section__head {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4) var(--yp-space-5);
+  background: var(--yp-bg-card-soft);
+  border-bottom: 1px solid var(--yp-border-subtle);
+}
+
+.profile-section__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--yp-border-indigo);
+}
+
+.profile-section__icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.profile-section__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.profile-section__body {
+  padding: var(--yp-space-2) var(--yp-space-5);
+}
+
+/* ── INFO ROWS ── */
+.profile-info {
+  margin: 0;
+  padding: 0;
+}
+
+.profile-info__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--yp-space-4);
+  padding: var(--yp-space-3) 0;
+  border-bottom: 1px solid var(--yp-border-subtle);
+}
+
+.profile-info__row:last-child {
+  border-bottom: 0;
+}
+
+.profile-info__label {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.profile-info__value {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-heading);
+  text-align: right;
+  word-break: break-word;
+  margin: 0;
+  min-width: 0;
+}
+
+/* id-field: text + reveal button */
+.profile-id {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  justify-content: flex-end;
+}
+
+.profile-id__value {
+  font-family: var(--yp-font-mono);
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-heading);
+  letter-spacing: 0.1em;
+  min-width: 110px;
+  text-align: right;
+}
+
+.profile-id__reveal {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  color: var(--yp-text-muted);
+  padding: 0;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--yp-t-fast), color var(--yp-t-fast), border-color var(--yp-t-fast);
+}
+
+.profile-id__reveal:hover,
+.profile-id__reveal:focus {
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  border-color: var(--yp-border-indigo);
+}
+
+.profile-id__reveal svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── ACTIONS ── */
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--yp-space-2) var(--yp-space-3) !important;
+}
+
+.profile-action {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  width: 100%;
+  padding: var(--yp-space-3) var(--yp-space-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--yp-radius-sm);
+  color: var(--yp-text-body);
+  font-family: inherit;
+  font-size: var(--yp-text-sm);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--yp-t-fast);
+}
+
+.profile-action:hover,
+.profile-action:focus {
+  background: var(--yp-bg-card-soft);
+}
+
+.profile-action:active {
+  background: var(--yp-bg-indigo-soft);
+}
+
+.profile-action__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--yp-border-indigo);
+}
+
+.profile-action--danger .profile-action__icon {
+  background: rgba(244, 63, 94, 0.08);
+  color: #BE123C;
+  border-color: rgba(244, 63, 94, 0.22);
+}
+
+.profile-action__icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.profile-action__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.profile-action__text strong {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  letter-spacing: 0.005em;
+}
+
+.profile-action--danger .profile-action__text strong {
+  color: #BE123C;
+}
+
+.profile-action__text small {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-normal);
+  letter-spacing: 0.01em;
+}
+
+.profile-action__chevron {
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.profile-action__chevron svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── FOOTER ── */
+.profile-footer {
+  text-align: center;
+  color: var(--yp-text-faint);
+  font-size: var(--yp-text-xs);
+  line-height: 1.6;
+  padding: var(--yp-space-4) 0 var(--yp-space-2);
+  margin-top: var(--yp-space-2);
+}
+
+.profile-footer p {
+  margin: 0;
+}
+
+/* ── About modal content ── */
+.yp-about {
+  line-height: 1.6;
+  color: var(--yp-text-body);
+  font-size: var(--yp-text-sm);
+}
+
+.yp-about p {
+  margin: 0 0 var(--yp-space-3);
+}
+
+.yp-about p:last-child {
+  margin-bottom: 0;
+}
+
+.yp-about__meta {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: var(--yp-space-4) !important;
+  padding-top: var(--yp-space-3);
+  border-top: 1px solid var(--yp-border-subtle);
+  letter-spacing: 0.04em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   FORM MODAL (Create event/task) — ปรับให้หายใจมากขึ้น
+   ═══════════════════════════════════════════════════════════════ */
+.form-modal__section {
+  margin-bottom: var(--yp-space-6);
+}
+
+.form-modal__section-title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--yp-text-muted);
+  margin-bottom: var(--yp-space-3);
+}
+
+/* Parent event chip (in add-task form) */
+.form-modal__parent {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: 14px 16px;
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  margin-bottom: var(--yp-space-5);
+}
+
+.form-modal__parent-label {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  font-weight: var(--yp-fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.form-modal__parent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 6px 12px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-bg-card-soft);
+  color: var(--accent, var(--yp-emerald-600));
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--yp-emerald-600)) 25%, transparent);
+  letter-spacing: 0.01em;
+  min-width: 0;
+}
+.form-modal__parent-chip svg {
+  width: 14px; height: 14px;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+.form-modal__parent-chip span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Priority picker — mirrors .type-picker */
+.priority-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.priority-option {
+  border: 1.5px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-sm);
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: border-color var(--yp-t-fast), background var(--yp-t-fast), box-shadow var(--yp-t-fast), transform var(--yp-t-fast);
+  text-align: center;
+  background: var(--yp-bg-card);
+  box-shadow: var(--yp-shadow-xs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.priority-option:hover {
+  border-color: var(--yp-border-indigo);
+}
+
+.priority-option.is-selected {
+  border-color: var(--yp-emerald-500);
+  background: var(--yp-bg-indigo-soft);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.priority-option__dot {
+  width: 14px; height: 14px;
+  border-radius: var(--yp-radius-pill);
+  margin-bottom: 2px;
+}
+.priority-option__dot.is-low    { background: #0EA5E9; }
+.priority-option__dot.is-medium { background: #0EA5E9; }
+.priority-option__dot.is-high   { background: #F43F5E; }
+
+.priority-option__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+
+.priority-option__desc {
+  font-size: var(--yp-text-xs);  /* v6.1: คืนจาก 11px → 12px อ่านง่ายขึ้น */
+  color: var(--yp-text-muted);
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+/* Actions row — ใช้เป็น content ของ .sheet__footer
+ * (footer ที่เป็น sibling ของ .sheet__body ล็อคอยู่ด้านล่าง sheet เป็น flex item,
+ *  พื้นหลังเต็มความกว้างผ่าน negative margin ของ .sheet__footer,
+ *  ปุ่มอยู่ที่ศูนย์จากด้านล่างจริง ๆ รวม safe-area)
+ *
+ * ตอนนี้ .form-modal__actions แค่เป็น flex row ของปุ่ม — ไม่มี sticky/gradient
+ * แล้ว (ย้ายไปอยู่ใน .sheet__footer แทน)
+ */
+.form-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.type-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.type-option {
+  border: 1.5px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-md);
+  padding: var(--yp-space-4);
+  cursor: pointer;
+  transition: border-color var(--yp-t-fast), background var(--yp-t-fast), box-shadow var(--yp-t-fast), transform var(--yp-t-fast);
+  text-align: left;
+  background: var(--yp-bg-card);
+  box-shadow: var(--yp-shadow-xs);
+}
+
+.type-option:hover {
+  border-color: var(--yp-border-indigo);
+}
+
+.type-option.is-selected {
+  border-color: var(--yp-emerald-500);
+  background: var(--yp-bg-indigo-soft);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.type-option__icon {
+  width: 40px; height: 40px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  display: grid;
+  place-items: center;
+  font-size: var(--yp-text-base);
+  margin-bottom: var(--yp-space-3);
+  border: 1px solid var(--yp-border-indigo);
+}
+
+.type-option.is-selected .type-option__icon {
+  background: var(--yp-gradient-brand-flat);
+  color: white;
+  border-color: var(--yp-emerald-600);
+}
+
+.type-option__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 0;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.type-option__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.color-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  /* ── กัน "เอียงซ้าย" — แจกจ่ายสีให้เต็มความกว้าง ──
+   *
+   * ก่อนหน้า: ไม่มี justify-content → default flex-start → สีทั้งหมด
+   * กองซ้าย ทิ้งพื้นที่ว่างขวา 100-200px → ดู "เอียงซ้าย"
+   *
+   * space-between แจกจ่าย gap ให้เท่ากันระหว่างสี ทำให้สีเต็ม
+   * ความกว้างของ sheet body ดูเป็น "พาเลตต์" ที่สมดุล
+   */
+  justify-content: space-between;
+}
+
+.color-option {
+  width: 30px; height: 30px;
+  border-radius: var(--yp-radius-pill);
+  border: 2px solid white;
+  box-shadow: 0 0 0 1.5px var(--yp-border-subtle);
+  cursor: pointer;
+  transition: transform var(--yp-t-fast), box-shadow var(--yp-t-fast);
+}
+
+.color-option:hover { transform: scale(1.12); }
+.color-option.is-selected {
+  box-shadow: 0 0 0 2.5px var(--yp-emerald-500);
+  transform: scale(1.05);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING SCREEN
+   ═══════════════════════════════════════════════════════════════ */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--yp-gradient-hero);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  transition: opacity 320ms var(--yp-ease);
+}
+
+.loading-screen.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-screen__inner {
+  text-align: center;
+  color: white;
+}
+
+/* v5.8: ลดมุมโค้ง md→sm (36→28px) ให้ logo ไม่เกือบเป็นวงกลม */
+.loading-screen__logo {
+  width: 60px; height: 60px;
+  border-radius: var(--yp-radius-sm);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: grid;
+  place-items: center;
+  font-size: var(--yp-text-xl);
+  font-weight: var(--yp-fw-extrabold);
+  margin: 0 auto var(--yp-space-3);
+  animation: yp-pulse 1.6s var(--yp-ease) infinite;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@keyframes yp-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.88; }
+}
+
+.loading-screen__title {
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-bold);
+  margin-bottom: 2px;
+  letter-spacing: 0.01em;
+}
+
+.loading-screen__subtitle {
+  font-size: var(--yp-text-sm);
+  opacity: 0.78;
+  letter-spacing: 0.02em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SINGLE EVENT DETAIL (งานเดี่ยว)
+   v6.0: ปรับ single-hero ให้ premium มากขึ้นอีก — โดยเฉพาะแบบสีธรรมดา
+   (non-group) ที่ไม่ใช่ gradient brand เหมือน detail-hero ของ group
+
+   หลักการออกแบบ v6.0:
+   - ใช้ "deep accent wash" แบบ 3-stop ที่ลึกขึ้น จาก 4% → 18% → 28%
+   - เพิ่ม directional radial highlight ที่มุมบน-ขวา (เหมือนแสง)
+   - ใช้ accent-tinted border + accent-tinted shadow → sensation เหมือน
+     hero block ที่ "เป็นของ" event นี้จริง ๆ
+   - ใช้ dot pattern + accent glow ที่มุมล่าง-ซ้าย (เหมือน group)
+   - ขนาด icon ลดลงนิด (52→46) เพื่อความสมดุลกับ font ที่ลดลง
+   ═══════════════════════════════════════════════════════════════ */
+.single-hero {
+  /* v7.4: เพิ่ม saturation ของ accent ให้เด่นชัดขึ้น — กลมกลืนกับ group hero
+   *       ยังคงเป็น "light wash" แต่ accent เข้มขึ้นทำให้ theme ของงานเด่นชัด
+   *       radial highlight ที่มุมบน-ขวา + 3-stop linear wash */
+  background:
+    radial-gradient(circle at 88% 0%,
+      color-mix(in srgb, var(--accent, #0EA5E9) 38%, white) 0%,
+      transparent 55%),
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent, #0EA5E9) 10%, white) 0%,
+      color-mix(in srgb, var(--accent, #0EA5E9) 22%, white) 50%,
+      color-mix(in srgb, var(--accent, #0EA5E9) 34%, white) 100%);
+  /* v7.1: background-size ใหญ่กว่า element เพื่อให้ bg-flow animation เห็นผล */
+  background-size: 180% 180%, 100% 100%;
+  border: 1px solid color-mix(in srgb, var(--accent, #0EA5E9) 26%, transparent);
+  border-radius: var(--yp-radius-hero);
+  padding: var(--yp-space-7) var(--yp-space-6) var(--yp-space-5);  /* v6.1: ลด padding ลง */
+  margin-bottom: var(--yp-space-6);  /* v6.1: ลด margin */
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--accent, #0EA5E9) 16%, transparent),
+    0 1px 3px color-mix(in srgb, var(--accent, #0EA5E9) 8%, transparent),
+    var(--yp-shadow-xs);
+  /* v7.4: ใช้ emphasized easing ลื่นกว่าเดิม */
+  animation:
+    yp-hero-enter var(--yp-hero-enter) both;
+}
+
+/* v7.3: อนุภาคฝุ่น scattered accent-tinted + แสงหมอกจางสลับ + เปลี่ยนขนาด
+ * accent-tinted กลมกลืนกับพื้นหลัง single-hero
+ * รวม dust particles + breathe blobs ใน ::before เดียว
+ * เพราะ single-hero::after ใช้สำหรับ accent glow */
+.single-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 2px 2px,
+      color-mix(in srgb, var(--accent, #0EA5E9) 14%, transparent) 1px,
+      transparent 0),
+    radial-gradient(circle at 1px 1px,
+      color-mix(in srgb, var(--accent, #0EA5E9) 8%, transparent) 1.5px,
+      transparent 0),
+    radial-gradient(circle at 3px 3px,
+      color-mix(in srgb, var(--accent, #0EA5E9) 6%, transparent) 0.7px,
+      transparent 0),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center,
+      color-mix(in srgb, var(--accent, #0EA5E9) 7%, transparent) 0%, transparent 42%),
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.08) 0%, transparent 48%);
+  background-size: 37px 31px, 23px 43px, 17px 19px, 60% 55%, 45% 42%, 55% 50%;
+  background-position: 0px 0px, 0px 0px, 0px 0px, 20% 25%, 45% 50%, 70% 20%;
+  pointer-events: none;
+  opacity: 0.7;
+  /* v7.3: dust-drift + dot-breathe รวม */
+}
+
+/* v6.0: accent glow ที่มุมล่าง-ซ้าย — opacity เพิ่มขึ้น (0.28 → 0.32)
+ * ให้ sensation เหมือน hero "เรืองแสง" ด้วยสีของ event
+ * ใช้ mix-blend-mode: multiply เพื่อให้ glow กลืนกับพื้นหลัง tinted
+ * v7.0: เพิ่ม breathing animation */
+.single-hero::after {
+  content: '';
+  position: absolute;
+  left: -50px; bottom: -50px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent, #0EA5E9) 0%, transparent 70%);
+  opacity: 0.32;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.single-hero__top {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  margin-bottom: var(--yp-space-5);
+  position: relative;
+  z-index: 1;
+  /* v7.0: entrance */
+  animation: yp-hero-enter 400ms var(--yp-ease-bounce) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 1);
+}
+
+/* v6.0: icon tile "frosted glass" — ขนาดลดลงนิด (52→46) สมดุลกับ font ใหม่
+ * ใช้ multi-layer shadow + inset highlight ให้ดูเป็น "tangible object"
+ * ไม่ใช่แค่สีพื้น */
+.single-hero__icon {
+  width: 46px; height: 46px;
+  border-radius: var(--yp-radius-sm);
+  background: color-mix(in srgb, var(--accent, #0EA5E9) 14%, white);
+  color: var(--accent, var(--yp-emerald-600));
+  display: grid;
+  place-items: center;
+  border: 1.5px solid color-mix(in srgb, var(--accent, #0EA5E9) 38%, transparent);
+  box-shadow:
+    0 4px 14px color-mix(in srgb, var(--accent, #0EA5E9) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent, #0EA5E9) 18%, transparent);
+  position: relative;
+  z-index: 1;
+}
+.single-hero__icon svg { width: 22px; height: 22px; }
+
+/* v6.0: label ใช้ glass chip แบบเดียวกับ detail-hero ของ group
+ * ใช้ accent-tinted ที่ลึกขึ้นนิด เพื่อ contrast ที่ดีขึ้น */
+.single-hero__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--yp-radius-pill);
+  background: color-mix(in srgb, var(--accent, #0EA5E9) 16%, white);
+  border: 1px solid color-mix(in srgb, var(--accent, #0EA5E9) 30%, transparent);
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  color: var(--accent, var(--yp-emerald-600));
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.single-hero__title {
+  font-size: var(--yp-text-3xl, 1.75rem);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-text-strong);
+  letter-spacing: -0.012em;
+  margin-bottom: var(--yp-space-5);
+  line-height: 1.18;
+  position: relative;
+  z-index: 1;
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 2);
+}
+
+/* v6.0: meta ใช้ "pill cluster" — สืบทอด pattern จาก v5.5 */
+.single-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-secondary);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+  /* v7.0: entrance */
+  animation: yp-hero-enter var(--yp-hero-enter) both;
+  animation-delay: calc(var(--yp-hero-stagger) * 3);
+}
+
+.single-hero__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.005em;
+  box-shadow: var(--yp-shadow-xs);
+}
+
+/* ลบ separator เดิม — ใช้ pill คั่นเอา */
+.single-hero__meta-item + .single-hero__meta-item::before {
+  content: none;
+}
+
+.single-hero__meta-item svg {
+  width: 14px; height: 14px;
+  color: var(--accent, var(--yp-emerald-600));
+  opacity: 0.85;
+}
+
+/* ── Shared detail description (ใช้ร่วมกันทั้งงานเดี่ยวและกลุ่มงาน) ──
+ * v6.0: ออกแบบใหม่ — ลบ border-left ออก (เดิมดูไม่ค่อยได้)
+ * เปลี่ยนเป็น "premium accent-tinted card" ที่:
+ *  - ใช้ gradient จาก white → accent-tinted (soft wash) ทำให้รู้สึก
+ *    เหมือนเนื้อหา "เรืองแสง" ด้วยสีของ event
+ *  - มี subtle accent glow ที่มุมบน-ขวา (เหมือน event-card และ stat)
+ *    → ความสม่ำเสมอกับจุดอื่น ๆ ในระบบ
+ *  - ใช้ radius token และ shadow token ตามระบบ ไม่ hardcode
+ *  - line-height โปร่ง ให้อ่านสบาย
+ * v5.3: เปลี่ยนจาก .single-desc → .detail-desc เป็น shared class
+ * ทั้ง 2 หน้าใช้ CSS เดียวกัน 100% (ตามที่ผู้ใช้ต้องการ) */
+.detail-desc,
+.single-desc {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 4%, var(--yp-bg-card)) 0%,
+      var(--yp-bg-card) 60%,
+      var(--yp-bg-card-soft) 100%);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 14%, var(--yp-border-subtle));
+  border-radius: var(--yp-radius-md);
+  padding: var(--yp-space-6) var(--yp-space-6);
+  color: var(--yp-text-body);
+  line-height: 1.75;
+  font-size: var(--yp-text-sm);
+  white-space: pre-wrap;
+  box-shadow: var(--yp-shadow-xs);
+  letter-spacing: 0.005em;
+  position: relative;
+  overflow: hidden;
+}
+
+/* v6.0: subtle accent glow ที่มุมบน-ขวา — เหมือน event-card, stat, hero
+ * ให้ความรู้สึก "premium" และเชื่อมโยงกับสีของ event
+ * ไม่ใช้ border-left ที่ดู "ตัดการ์ด" อีกต่อไป */
+.detail-desc::before,
+.single-desc::before {
+  content: '';
+  position: absolute;
+  top: -36px; right: -36px;
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--accent, var(--yp-emerald-500)) 35%, transparent) 0%,
+    transparent 70%);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+/* v6.0: inset top highlight — ให้ sensation เหมือน "แผ่นเนื้อหา" ที่ลอยขึ้นมา
+ * เหมือน card อื่น ๆ ที่มี inset 0 1px 0 rgba(255,255,255,0.6) */
+.detail-desc::after,
+.single-desc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+/* Department info card — v5.2: padding เพิ่ม + radius ใหญ่ขึ้น (md แทน sm)
+ * เพื่อให้สัมผัสเหมือน modern minimal platform */
+.single-dept {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-4);
+  padding: var(--yp-space-5) var(--yp-space-6);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);
+  box-shadow: var(--yp-shadow-xs);
+}
+
+.single-dept__icon {
+  width: 42px; height: 42px;
+  border-radius: var(--yp-radius-sm);
+  background: color-mix(in srgb, var(--dept-color, #0EA5E9) 12%, white);
+  color: var(--dept-color, var(--yp-emerald-600));
+  display: grid;
+  place-items: center;
+  font-size: var(--yp-text-lg);
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--dept-color, #0EA5E9) 22%, transparent);
+}
+
+.single-dept__body { flex: 1; min-width: 0; }
+.single-dept__name {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 6px;
+  letter-spacing: 0.005em;
+}
+.single-dept__desc {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  line-height: 1.6;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS QUICK PICKER — ปุ่ม 3 ปุ่มใหญ่สำหรับเปลี่ยนสถานะงานเดี่ยว
+   v5.4: ใช้ radius-md เท่า detail-desc เพื่อความสม่ำเสมอของความมน
+   ═══════════════════════════════════════════════════════════════ */
+.status-quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--yp-space-3);
+}
+
+.status-quick__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: var(--yp-space-5) var(--yp-space-3);
+  background: var(--yp-bg-card);
+  border: 1.5px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-md);
+  cursor: pointer;
+  transition: border-color var(--yp-t-fast), background var(--yp-t-fast), box-shadow var(--yp-t-fast);
+  font-family: inherit;
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-secondary);
+  box-shadow: var(--yp-shadow-xs);
+  letter-spacing: 0.005em;
+}
+.status-quick__btn:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--yp-border-indigo)) 22%, var(--yp-border-default));
+  background: var(--yp-bg-card);
+}
+.status-quick__btn.is-active {
+  border-width: 2px;
+}
+.status-quick__btn.is-active.is-todo {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.08);
+  color: #B45309;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+}
+.status-quick__btn.is-active.is-ongoing {
+  border-color: #0EA5E9;
+  background: rgba(14, 165, 233, 0.08);
+  color: var(--yp-emerald-700);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+.status-quick__btn.is-active.is-done {
+  border-color: #0EA5E9;
+  background: rgba(14, 165, 233, 0.08);
+  color: #0284C7;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+}
+
+.status-quick__dot {
+  width: 14px; height: 14px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--yp-border-strong);
+}
+.status-quick__dot.is-todo { background: #F59E0B; }
+.status-quick__dot.is-ongoing { background: #0EA5E9; }
+.status-quick__dot.is-done { background: #0EA5E9; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS PICKER (bottom sheet) — เลือกสถานะ task แบบ list
+   ═══════════════════════════════════════════════════════════════ */
+.status-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-picker__option {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4) var(--yp-space-5);
+  background: var(--yp-bg-card);
+  border: 1.5px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  transition: border-color var(--yp-t-fast), background var(--yp-t-fast);
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  box-shadow: var(--yp-shadow-xs);
+}
+.status-picker__option:hover {
+  border-color: var(--yp-border-indigo);
+  background: var(--yp-bg-card-soft);
+}
+.status-picker__option.is-current {
+  border-color: var(--status-color, var(--yp-emerald-500));
+  background: color-mix(in srgb, var(--status-color, #0EA5E9) 8%, white);
+}
+
+.status-picker__icon {
+  width: 38px; height: 38px;
+  border-radius: var(--yp-radius-sm);
+  background: color-mix(in srgb, var(--status-color, #0EA5E9) 14%, white);
+  color: var(--status-color, var(--yp-emerald-600));
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  font-weight: var(--yp-fw-bold);
+  border: 1px solid color-mix(in srgb, var(--status-color, #0EA5E9) 22%, transparent);
+}
+
+.status-picker__text { flex: 1; min-width: 0; }
+.status-picker__label {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 2px;
+}
+.status-picker__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+}
+
+.status-picker__check {
+  color: var(--status-color, var(--yp-emerald-600));
+  flex-shrink: 0;
+}
+.status-picker__check svg { width: 18px; height: 18px; stroke-width: 2.5; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MANAGE SHEET — bottom sheet สำหรับจัดการงาน (แก้ไข + ลบ)
+   ═══════════════════════════════════════════════════════════════ */
+.manage-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.manage-sheet__action {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4) var(--yp-space-5);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast);
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  box-shadow: var(--yp-shadow-xs);
+  color: var(--yp-text-muted);
+}
+.manage-sheet__action:hover {
+  background: var(--yp-bg-card-soft);
+  border-color: var(--yp-border-indigo);
+}
+.manage-sheet__action--danger:hover {
+  background: rgba(244, 63, 94, 0.04);
+  border-color: rgba(244, 63, 94, 0.30);
+}
+
+.manage-sheet__icon {
+  width: 38px; height: 38px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-indigo-soft);
+  color: var(--yp-emerald-600);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--yp-border-indigo);
+}
+.manage-sheet__icon svg { width: 18px; height: 18px; }
+
+.manage-sheet__icon--danger {
+  background: rgba(244, 63, 94, 0.08);
+  color: #BE123C;
+  border-color: rgba(244, 63, 94, 0.20);
+}
+
+.manage-sheet__body { flex: 1; min-width: 0; }
+.manage-sheet__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+  margin-bottom: 3px;
+  letter-spacing: 0.005em;
+}
+.manage-sheet__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.45;
+}
+
+.manage-sheet__action > svg:last-child {
+  width: 16px; height: 16px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+/* ── Task picker (สำหรับเลือก task ที่จะแก้ไข) ── */
+.manage-task-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.manage-task-picker__item {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast);
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  box-shadow: var(--yp-shadow-xs);
+  color: var(--yp-text-muted);
+}
+.manage-task-picker__item:hover {
+  background: var(--yp-bg-card-soft);
+  border-color: var(--yp-border-indigo);
+}
+.manage-task-picker__body { flex: 1; min-width: 0; }
+.manage-task-picker__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-heading);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.manage-task-picker__meta {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+}
+.manage-task-picker__item > svg:last-child {
+  width: 16px; height: 16px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TASK ROW — status dot (แทนที่ checkbox เดิม)
+   ═══════════════════════════════════════════════════════════════ */
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--yp-border-subtle);
+  cursor: pointer;
+  transition: background var(--yp-t-fast);
+  margin: 0 calc(-1 * var(--yp-space-2));
+  padding-left: var(--yp-space-2);
+  padding-right: var(--yp-space-2);
+  border-radius: var(--yp-radius-xs);
+}
+.task-row:hover {
+  background: var(--yp-bg-card-soft);
+}
+.task-row:last-of-type { border-bottom: none; }
+
+.task-status-dot {
+  width: 16px; height: 16px;
+  border-radius: var(--yp-radius-pill);
+  flex-shrink: 0;
+  margin-top: 3px;
+  border: 2px solid;
+  position: relative;
+}
+.task-status-dot--todo {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+}
+.task-status-dot--ongoing {
+  border-color: #0EA5E9;
+  background: rgba(14, 165, 233, 0.20);
+}
+.task-status-dot--ongoing::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: var(--yp-radius-pill);
+  background: #0EA5E9;
+  animation: yp-pulse-status 1.8s ease-in-out infinite;
+}
+.task-status-dot--done {
+  border-color: #0EA5E9;
+  background: #0EA5E9;
+}
+.task-status-dot--done::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 4px;
+  width: 4px; height: 8px;
+  border-right: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(45deg);
+}
+
+@keyframes yp-pulse-status {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Status chip on task row — colored according to status */
+.task-row__status { font-weight: var(--yp-fw-semibold); }
+.task-row__status--todo {
+  color: #B45309;
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.task-row__status--ongoing {
+  color: var(--yp-emerald-700);
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.25);
+}
+.task-row__status--done {
+  color: #0284C7;
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.25);
+}
+.task-row__status svg { width: 11px; height: 11px; stroke-width: 2.2; }
+
+/* Assignee chip — ใช้ SVG avatar (กัน copy ตัวอักษร) */
+.task-row__chip--assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 8px;
+}
+.task-row__avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+}
+.task-row__avatar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Hint text under task list */
+.task-list-hint {
+  margin-top: 12px;
+  text-align: center;
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-faint);
+  font-weight: var(--yp-fw-medium);
+  letter-spacing: 0.02em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   YP ADMIN · ADMIN-SPECIFIC PAGE STYLES
+   เพิ่มเติมสำหรับหน้า admin: dashboard, departments, users,
+   requests, years — ใช้ token เดียวกับ ypwork ทั้งหมด
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   DASHBOARD HERO — สืบทอดจาก today-hero แต่ปรับสีและ layout
+   v1.2: Sky Blue + Cyan gradient — เข้ากับสีขาวดีกว่าเขียว
+   ──────────────────────────────────────────────────────────── */
+.admin-hero {
+  position: relative;
+  border-radius: var(--yp-radius-hero);
+  padding: var(--yp-space-6) var(--yp-space-5);
+  margin-bottom: var(--yp-space-6);
+  background: var(--yp-gradient-hero);
+  color: white;
+  overflow: hidden;
+  isolation: isolate;
+  contain: layout style paint;
+  animation: yp-hero-enter var(--yp-hero-enter, 600ms var(--yp-ease-decel)) both;
+}
+
+.admin-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.10) 0%, transparent 35%),
+    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 35%),
+    radial-gradient(circle at 2px 2px, rgba(255,255,255,0.06) 1px, transparent 0),
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1.5px, transparent 0);
+  background-size: auto, auto, 37px 31px, 23px 43px;
+  pointer-events: none;
+}
+
+.admin-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(6, 182, 212, 0.10) 0%, transparent 42%);
+  background-size: 60% 55%, 45% 42%;
+  background-position: 20% 25%, 70% 70%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.admin-hero__content {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-hero__greeting {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-medium);
+  opacity: 0.88;
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+
+/* v1.2: hero name ลดจาก 2xl → xl — รู้สึกใหญ่เกิน */
+.admin-hero__name {
+  font-size: var(--yp-text-xl);
+  font-weight: var(--yp-fw-extrabold);
+  letter-spacing: 0.01em;
+  margin-bottom: 4px;
+  line-height: var(--yp-leading-tight);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.admin-hero__date {
+  font-size: var(--yp-text-sm);
+  opacity: 0.85;
+  margin-bottom: var(--yp-space-5);
+}
+
+.admin-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--yp-space-2);
+  padding-top: var(--yp-space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.admin-hero__stat {
+  text-align: center;
+}
+
+/* v1.2: stat values in hero ลดจาก 2xl → xl */
+.admin-hero__stat-value {
+  font-size: var(--yp-text-xl);
+  font-weight: var(--yp-fw-extrabold);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.admin-hero__stat-label {
+  font-size: 11px;
+  opacity: 0.82;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+
+/* ────────────────────────────────────────────────────────────
+   STAT CARD — การ์ดสถิติเล็ก (ใช้ใน dashboard / users)
+   ──────────────────────────────────────────────────────────── */
+/* v1.2: ypwork-style accent border for stat-card — top accent bar + halo */
+.stat-card {
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  padding: var(--yp-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  overflow: hidden;
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+  contain: layout style;
+  --accent: var(--stat-color, var(--yp-sky-500));
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.05;
+  pointer-events: none;
+  transition: opacity var(--yp-t-fast);
+}
+
+.stat-card:hover::before {
+  opacity: 0.10;
+}
+
+.stat-card__label {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* v1.2: stat-card__value ลดจาก 2xl → xl — รู้สึกใหญ่เกิน */
+.stat-card__value {
+  font-size: var(--yp-text-xl);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-text-strong);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.stat-card__sub {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-faint);
+  margin-top: 2px;
+}
+
+.stat-card__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--stat-color, var(--yp-emerald-500));
+}
+
+/* Grid layout for stat cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--yp-space-3);
+  margin-bottom: var(--yp-space-5);
+}
+
+@media (min-width: 600px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   ACTION CARD — การ์ดเมนูหลักใน dashboard
+   ──────────────────────────────────────────────────────────── */
+/* v1.2: ypwork-style accent border for action-card — halo + hover tint + translateY */
+.action-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  --accent: var(--action-color, var(--yp-sky-500));
+  transition:
+    background-color var(--yp-t-fast),
+    border-color var(--yp-t-fast),
+    box-shadow var(--yp-t-fast),
+    transform 180ms var(--yp-ease-standard);
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+  contain: layout style;
+}
+
+/* halo top-right */
+.action-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.05;
+  pointer-events: none;
+  transition: opacity var(--yp-t-fast);
+}
+
+/* accent bar left (ypwork event-card style) */
+.action-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 22px; bottom: 22px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  transition: top var(--yp-t-fast), bottom var(--yp-t-fast);
+}
+
+.action-card:hover {
+  background: color-mix(in srgb, var(--accent) 4%, var(--yp-bg-card));
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.action-card:hover::after {
+  opacity: 0.10;
+}
+
+.action-card:hover::before {
+  top: 0;
+  bottom: 0;
+}
+
+.action-card:active {
+  background: color-mix(in srgb, var(--accent) 8%, var(--yp-bg-card));
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: scale(0.985);
+}
+
+.action-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--yp-space-2);
+}
+
+.action-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--yp-radius-sm);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--action-color, var(--yp-sky-500));
+  background: color-mix(in srgb, var(--action-color, var(--yp-sky-500)) 14%, transparent);
+  color: var(--action-color, var(--yp-sky-600));
+  flex-shrink: 0;
+}
+
+.action-card__badge {
+  font-size: 11px;
+  font-weight: var(--yp-fw-bold);
+  padding: 2px 8px;
+  border-radius: var(--yp-radius-pill);
+  background: color-mix(in srgb, var(--action-color, var(--yp-sky-500)) 14%, transparent);
+  color: var(--action-color, var(--yp-sky-700));
+}
+
+.action-card__badge--urgent {
+  background: rgba(244, 63, 94, 0.10);
+  color: #BE123C;
+}
+
+/* v1.2: action-card__title ลดจาก base → md (15px) — ใหญ่เกิน */
+.action-card__title {
+  font-size: var(--yp-text-md);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  line-height: 1.3;
+}
+
+.action-card__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.5;
+}
+
+.action-card__footer {
+  font-size: 11px;
+  font-weight: var(--yp-fw-bold);
+  color: var(--action-color, var(--yp-sky-600));
+  opacity: 0.85;
+  letter-spacing: 0.02em;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--yp-space-3);
+}
+
+@media (min-width: 600px) {
+  .action-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .action-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   PENDING ALERT — แบนเนอร์เตือนใน dashboard
+   ──────────────────────────────────────────────────────────── */
+.pending-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  border-radius: var(--yp-radius-md);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-left: 4px solid var(--yp-amber-500);
+  margin-bottom: var(--yp-space-5);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform var(--yp-t-fast);
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+}
+
+.pending-alert:active { transform: scale(0.99); }
+
+.pending-alert__icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.pending-alert__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pending-alert__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: #B45309;
+}
+
+.pending-alert__desc {
+  font-size: var(--yp-text-xs);
+  color: #B45309;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.pending-alert__action {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  color: #B45309;
+  white-space: nowrap;
+}
+
+/* ────────────────────────────────────────────────────────────
+   DEPARTMENT CARD — การ์ดฝ่ายงาน
+   ──────────────────────────────────────────────────────────── */
+/* v1.2: ypwork-style accent border for dept-card — halo + hover tint + accent bar */
+.dept-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  --accent: var(--dept-color, var(--yp-sky-500));
+  transition:
+    background-color var(--yp-t-fast),
+    border-color var(--yp-t-fast),
+    box-shadow var(--yp-t-fast),
+    transform 180ms var(--yp-ease-standard);
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+  contain: layout style;
+}
+
+/* halo top-right */
+.dept-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.05;
+  pointer-events: none;
+  transition: opacity var(--yp-t-fast);
+}
+
+/* accent bar left (ypwork event-card style) */
+.dept-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 22px; bottom: 22px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  transition: top var(--yp-t-fast), bottom var(--yp-t-fast);
+}
+
+.dept-card:hover {
+  background: color-mix(in srgb, var(--accent) 4%, var(--yp-bg-card));
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.dept-card:hover::after {
+  opacity: 0.10;
+}
+
+.dept-card:hover::before {
+  top: 0;
+  bottom: 0;
+}
+
+.dept-card:active {
+  background: color-mix(in srgb, var(--accent) 8%, var(--yp-bg-card));
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  transform: scale(0.985);
+}
+
+.dept-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--yp-radius-sm);
+  background: color-mix(in srgb, var(--dept-color, var(--yp-sky-500)) 14%, transparent);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.dept-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* v1.2: dept-card__title ลดจาก base → md (15px) — ใหญ่เกิน */
+.dept-card__title {
+  font-size: var(--yp-text-md);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  margin-bottom: 2px;
+}
+
+.dept-card__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dept-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  margin-top: var(--yp-space-2);
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-faint);
+}
+
+.dept-card__chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   USER LIST ITEM — รายการผู้ใช้ในหน้า users
+   ──────────────────────────────────────────────────────────── */
+/* v1.2: user-item — เพิ่ม ypwork-style hover/active (subtle sky tint) */
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: calc(var(--yp-list-pad-y) + 2px) var(--yp-list-pad-x);
+  background: var(--yp-bg-card);
+  border-bottom: 1px solid var(--yp-border-subtle);
+  cursor: pointer;
+  transition: background-color var(--yp-t-fast), border-color var(--yp-t-fast);
+  contain: layout style;
+  position: relative;
+  min-height: 64px;
+}
+
+.user-item:last-child { border-bottom: none; }
+.user-item:hover { background: color-mix(in srgb, var(--yp-sky-500) 4%, var(--yp-bg-card)); }
+.user-item:active { background: color-mix(in srgb, var(--yp-sky-500) 8%, var(--yp-bg-card)); transform: scale(0.998); }
+
+.user-item__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--yp-bg-card-soft);
+  border: 1.5px solid var(--yp-bg-card);
+  box-shadow: var(--yp-shadow-xs);
+}
+
+.user-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-item__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.user-item__subtitle {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.4;
+}
+
+.user-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.user-item__chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   REQUEST CARD — การ์ดคำขอสมัครสมาชิก
+   ──────────────────────────────────────────────────────────── */
+/* v1.2: request-card — ypwork-style accent border (sky bar + halo) */
+.request-card {
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  overflow: hidden;
+  margin-bottom: var(--yp-space-3);
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+  contain: layout style;
+  position: relative;
+  --accent: var(--yp-sky-500);
+}
+
+.request-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+}
+
+.request-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+.request-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  border-bottom: 1px solid var(--yp-border-subtle);
+}
+
+.request-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--yp-bg-card-soft);
+}
+
+.request-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* v1.2: request-card__title ลดจาก base → md (15px) — ใหญ่เกิน */
+.request-card__title {
+  font-size: var(--yp-text-md);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.request-card__subtitle {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.request-card__time {
+  font-size: 11px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.request-card__message {
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-card-soft);
+  border-bottom: 1px solid var(--yp-border-subtle);
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.request-card__actions {
+  display: flex;
+  gap: var(--yp-space-2);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.request-card__time-stamp {
+  font-size: 11px;
+  color: var(--yp-text-faint);
+  margin-right: auto;
+}
+
+/* ────────────────────────────────────────────────────────────
+   YEAR CARD — การ์ดปีการศึกษา
+   ──────────────────────────────────────────────────────────── */
+/* v1.2: year-card — ypwork-style accent border (halo + bar) */
+.year-card {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-4);
+  padding: var(--yp-space-4);
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  margin-bottom: var(--yp-space-3);
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+  contain: layout style;
+  position: relative;
+  overflow: hidden;
+  --accent: var(--year-color, var(--yp-sky-500));
+}
+
+.year-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 22px; bottom: 22px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+}
+
+.year-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* v1.2: year-card__number ลดจาก 2xl → xl — ใหญ่เกิน */
+.year-card__number {
+  font-size: var(--yp-text-xl);
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--yp-text-strong);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  flex-shrink: 0;
+  min-width: 56px;
+}
+
+.year-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.year-card__badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.year-card__slot {
+  font-size: 11px;
+  font-weight: var(--yp-fw-bold);
+  color: var(--year-color, var(--yp-sky-600));
+}
+
+.year-card__hint {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-faint);
+}
+
+/* ────────────────────────────────────────────────────────────
+   SEARCH BAR — ช่องค้นหาในหน้า users
+   ──────────────────────────────────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  padding: 0 var(--yp-space-3);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-control);
+  margin-bottom: var(--yp-space-4);
+  transition: border-color var(--yp-t-fast);
+}
+
+.search-bar:focus-within {
+  border-color: var(--yp-emerald-500);
+  box-shadow: 0 0 0 3px var(--yp-focus-ring);
+}
+
+.search-bar__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+.search-bar__input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: var(--yp-space-3) 0;
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  outline: none;
+}
+
+.search-bar__input::placeholder {
+  color: var(--yp-text-faint);
+}
+
+/* ────────────────────────────────────────────────────────────
+   FILTER BAR — เลือกปี/กรอง
+   ──────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  margin-bottom: var(--yp-space-4);
+  flex-wrap: wrap;
+}
+
+.filter-bar__select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-control);
+  padding: var(--yp-space-2) var(--yp-space-4) var(--yp-space-2) var(--yp-space-3);
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+  transition: border-color var(--yp-t-fast);
+}
+
+.filter-bar__select:focus {
+  outline: none;
+  border-color: var(--yp-emerald-500);
+  box-shadow: 0 0 0 3px var(--yp-focus-ring);
+}
+
+/* ────────────────────────────────────────────────────────────
+   DATA LIST — รายการทั่วไป
+   ──────────────────────────────────────────────────────────── */
+.data-list {
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  overflow: hidden;
+  margin-bottom: var(--yp-space-4);
+}
+
+.data-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--yp-space-3) var(--yp-space-4);
+  border-bottom: 1px solid var(--yp-border-subtle);
+  background: var(--yp-bg-card-soft);
+}
+
+.data-list__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-heading);
+}
+
+/* ────────────────────────────────────────────────────────────
+   INFO CARD — info banner ในหน้า years
+   v1.1: neutral info style (slate border) — let status pills carry color
+   ──────────────────────────────────────────────────────────── */
+.info-card {
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-default);
+  border-left: 3px solid var(--yp-teal-600);
+  border-radius: var(--yp-radius-md);
+  padding: var(--yp-space-4);
+  margin-bottom: var(--yp-space-5);
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+}
+
+.info-card__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  margin-bottom: var(--yp-space-2);
+}
+
+.info-card__body {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  line-height: 1.7;
+}
+
+.info-card__body strong {
+  color: var(--yp-text-strong);
+}
+
+.info-card__slots {
+  display: flex;
+  gap: var(--yp-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--yp-space-3);
+}
+
+.info-card__slot {
+  padding: 6px 14px;
+  border-radius: var(--yp-radius-pill);
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  border: 1.5px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  animation: yp-hero-enter var(--yp-card-enter, 380ms var(--yp-ease-decel)) both;
+}
+
+.info-card__slot--retained {
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.30);
+  color: var(--yp-emerald-700);
+}
+
+.info-card__slot--archive {
+  background: rgba(244, 63, 94, 0.10);
+  border-color: rgba(244, 63, 94, 0.30);
+  color: #BE123C;
+}
+
+.info-card__slot--current {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #B45309;
+}
+
+.info-card__slot-label {
+  font-size: 11px;
+  font-weight: var(--yp-fw-medium);
+  opacity: 0.75;
+}
+
+/* ────────────────────────────────────────────────────────────
+   PROFILE PAGE — โปรไฟล์แอดมิน
+   ──────────────────────────────────────────────────────────── */
+.profile-hero {
+  position: relative;
+  border-radius: var(--yp-radius-hero);
+  padding: var(--yp-space-6) var(--yp-space-5);
+  margin-bottom: var(--yp-space-6);
+  background: var(--yp-gradient-hero);
+  color: white;
+  overflow: hidden;
+  isolation: isolate;
+  contain: layout style paint;
+  text-align: center;
+  animation: yp-hero-enter var(--yp-hero-enter, 600ms var(--yp-ease-decel)) both;
+}
+
+.profile-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.18) 0%, transparent 55%),
+    radial-gradient(circle at 2px 2px, rgba(255,255,255,0.06) 1px, transparent 0);
+  background-size: auto, 31px 31px;
+  pointer-events: none;
+}
+
+.profile-hero__avatar {
+  position: relative;
+  z-index: 1;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--yp-radius-pill);
+  margin: 0 auto var(--yp-space-3);
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.20);
+  overflow: hidden;
+}
+
+.profile-hero__name {
+  position: relative;
+  z-index: 1;
+  font-size: var(--yp-text-xl);
+  font-weight: var(--yp-fw-extrabold);
+  letter-spacing: 0.01em;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+.profile-hero__role {
+  position: relative;
+  z-index: 1;
+  font-size: var(--yp-text-sm);
+  opacity: 0.88;
+}
+
+/* ────────────────────────────────────────────────────────────
+   SETTINGS LIST — รายการ settings ในหน้า profile
+   ──────────────────────────────────────────────────────────── */
+.settings-list {
+  background: var(--yp-bg-card);
+  border-radius: var(--yp-radius-md);
+  border: 1px solid var(--yp-border-subtle);
+  overflow: hidden;
+  margin-bottom: var(--yp-space-4);
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: calc(var(--yp-list-pad-y) + 2px) var(--yp-list-pad-x);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--yp-border-subtle);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--yp-t-fast);
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  min-height: 56px;
+}
+
+.settings-item:last-child { border-bottom: none; }
+.settings-item:hover { background: var(--yp-bg-card-soft); }
+.settings-item:active { background: color-mix(in srgb, var(--yp-sky-500) 5%, var(--yp-bg-card)); }
+
+.settings-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-card-soft);
+  color: var(--yp-sky-600);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.settings-item__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.settings-item__icon--danger {
+  background: rgba(244, 63, 94, 0.10);
+  color: #BE123C;
+}
+
+.settings-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-item__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  line-height: 1.4;
+}
+
+.settings-item__subtitle {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.settings-item__chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+.settings-item--danger .settings-item__title {
+  color: #BE123C;
+}
+
+/* v1.2: Editable settings item — clearer affordance that this row opens an editor
+ *       (used for the department field in user detail). Tinted bg + sky accent on hover,
+ *       with a small "แก้ไข" badge instead of a chevron. */
+.settings-item--editable {
+  background: color-mix(in srgb, var(--yp-sky-500) 3%, var(--yp-bg-card));
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast);
+}
+
+.settings-item--editable:hover {
+  background: color-mix(in srgb, var(--yp-sky-500) 6%, var(--yp-bg-card));
+}
+
+.settings-item--editable:active {
+  background: color-mix(in srgb, var(--yp-sky-500) 10%, var(--yp-bg-card));
+}
+
+.settings-item__edit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--yp-radius-pill);
+  background: color-mix(in srgb, var(--yp-sky-500) 12%, transparent);
+  color: var(--yp-sky-700);
+  font-size: 11px;
+  font-weight: var(--yp-fw-bold);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.settings-item__edit-badge svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+}
+
+/* ────────────────────────────────────────────────────────────
+   FORM FIELDS — ฟอร์มใน bottom sheet
+   ──────────────────────────────────────────────────────────── */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yp-space-3);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--yp-space-3);
+}
+
+.form-row > * { flex: 1; }
+
+/* Color picker for departments */
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--yp-space-2);
+  padding: var(--yp-space-2) 0;
+}
+
+.color-picker__swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--yp-radius-pill);
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--yp-t-fast);
+  background: none;
+  padding: 0;
+}
+
+.color-picker__swatch::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: var(--yp-radius-pill);
+  background: var(--swatch-color);
+}
+
+.color-picker__swatch:active { transform: scale(0.92); }
+
+.color-picker__swatch.is-selected {
+  border-color: var(--swatch-color);
+  box-shadow: 0 0 0 2px white inset;
+}
+
+.color-picker__swatch.is-selected::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Icon picker for departments */
+.icon-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--yp-space-2);
+  padding: var(--yp-space-2) 0;
+}
+
+.icon-picker__swatch {
+  aspect-ratio: 1;
+  border-radius: var(--yp-radius-sm);
+  border: 1.5px solid var(--yp-border-default);
+  background: var(--yp-bg-card);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  transition: all var(--yp-t-fast);
+  padding: 0;
+}
+
+.icon-picker__swatch:active { transform: scale(0.92); }
+.icon-picker__swatch.is-selected {
+  border-color: var(--yp-emerald-500);
+  background: var(--yp-bg-card-soft);
+  box-shadow: 0 0 0 3px var(--yp-focus-ring);
+}
+
+/* Year slot pill (in year card) */
+.year-slot-pill {
+  padding: 4px 10px;
+  border-radius: var(--yp-radius-pill);
+  font-size: 11px;
+  font-weight: var(--yp-fw-bold);
+  border: 1.5px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.year-slot-pill--current {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: #B45309;
+}
+
+.year-slot-pill--retained {
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.30);
+  color: var(--yp-emerald-700);
+}
+
+.year-slot-pill--archive {
+  background: rgba(244, 63, 94, 0.10);
+  border-color: rgba(244, 63, 94, 0.30);
+  color: #BE123C;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DANGER ZONE — 2-step type-to-confirm for destructive actions (v1.1)
+   ═══════════════════════════════════════════════════════════════ */
+
+.danger-zone {
+  padding: var(--yp-space-2) 0 var(--yp-space-3);
+}
+
+/* ── Hero (warning banner ด้านบน) ── */
+.danger-zone__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  background: var(--yp-danger-50);
+  border: 1px solid rgba(220, 38, 38, 0.20);
+  border-left: 4px solid var(--yp-danger-600);
+  border-radius: var(--yp-radius-md);
+  margin-bottom: var(--yp-space-4);
+}
+
+.danger-zone__hero--simple {
+  background: var(--yp-warning-50);
+  border-color: rgba(245, 158, 11, 0.22);
+  border-left-color: var(--yp-warning-500);
+}
+
+.danger-zone__hero-icon {
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-danger-600);
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.danger-zone__hero-icon--warning {
+  background: var(--yp-warning-500);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.danger-zone__hero-icon svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.danger-zone__hero-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.danger-zone__hero-title {
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-danger-700);
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+.danger-zone__hero--simple .danger-zone__hero-title {
+  color: var(--yp-warning-700);
+}
+
+.danger-zone__hero-msg {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  line-height: 1.55;
+}
+
+/* ── Impact list ── */
+.danger-zone__impact {
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  margin-bottom: var(--yp-space-4);
+}
+
+.danger-zone__impact-label {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--yp-text-secondary);
+  margin-bottom: var(--yp-space-2);
+}
+
+.danger-zone__impact-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.danger-zone__impact-list li {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  line-height: 1.5;
+  padding-left: 22px;
+  position: relative;
+}
+
+.danger-zone__impact-list li::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--yp-danger-500);
+}
+
+/* ── Entity (target name) ── */
+.danger-zone__entity {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-sm);
+  margin-bottom: var(--yp-space-4);
+  font-size: var(--yp-text-sm);
+}
+
+.danger-zone__entity-label {
+  color: var(--yp-text-muted);
+}
+
+.danger-zone__entity-name {
+  color: var(--yp-text-strong);
+  font-weight: var(--yp-fw-bold);
+}
+
+/* ── Hint (info note ด้านล่าง) ── */
+.danger-zone__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-2);
+  padding: var(--yp-space-3);
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-secondary);
+  line-height: 1.55;
+  background: rgba(254, 242, 242, 0.5);
+  border: 1px solid rgba(220, 38, 38, 0.10);
+  border-radius: var(--yp-radius-sm);
+}
+
+.danger-zone__hint svg {
+  width: 16px; height: 16px;
+  stroke: var(--yp-danger-600);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.danger-zone__hint strong {
+  color: var(--yp-danger-700);
+  font-weight: var(--yp-fw-bold);
+}
+
+/* ── Step 2: type-to-confirm ── */
+.danger-zone__step2-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-md);
+  margin-bottom: var(--yp-space-5);
+}
+
+.danger-zone__step2-icon {
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--yp-radius-sm);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-default);
+  color: var(--yp-text-secondary);
+  display: grid;
+  place-items: center;
+}
+
+.danger-zone__step2-icon svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.danger-zone__step2-text {
+  flex: 1;
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  line-height: 1.55;
+  padding-top: 4px;
+}
+
+.danger-zone__type-confirm {
+  margin-bottom: var(--yp-space-4);
+}
+
+.danger-zone__type-label {
+  display: block;
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  margin-bottom: var(--yp-space-2);
+  letter-spacing: 0.01em;
+}
+
+.danger-zone__type-input-wrap {
+  position: relative;
+}
+
+.danger-zone__type-input {
+  width: 100%;
+  padding: 0.9em 1.1em;
+  border: 1.5px solid var(--yp-border-default);
+  border-radius: var(--yp-radius-control);
+  background: var(--yp-bg-card);
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  letter-spacing: 0.02em;
+  min-height: 52px;
+  transition: border-color var(--yp-t-fast), box-shadow var(--yp-t-fast);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.danger-zone__type-input:focus {
+  outline: none;
+  border-color: var(--yp-danger-500);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+}
+
+.danger-zone__type-input::placeholder {
+  color: var(--yp-text-faint);
+  font-weight: var(--yp-fw-normal);
+}
+
+.danger-zone__type-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--yp-space-2);
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-semibold);
+  min-height: 18px;
+  color: var(--yp-text-muted);
+  transition: color var(--yp-t-fast);
+}
+
+.danger-zone__type-status.is-match {
+  color: #0284C7;
+}
+
+.danger-zone__type-status.is-mismatch {
+  color: var(--yp-danger-600);
+}
+
+.danger-zone__type-status svg {
+  width: 14px; height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.4;
+  flex-shrink: 0;
+}
+
+/* ── Footer (action buttons) ── */
+.danger-zone__footer {
+  display: flex;
+  gap: var(--yp-space-2);
+  padding-top: var(--yp-space-2);
+}
+
+.danger-zone__footer .btn--ghost {
+  background: var(--yp-bg-card-soft);
+  color: var(--yp-text-secondary);
+  border: 1px solid var(--yp-border-default);
+  flex: 1;
+}
+
+.danger-zone__footer .btn--danger-outline {
+  background: var(--yp-danger-50);
+  color: var(--yp-danger-700);
+  border: 1px solid rgba(220, 38, 38, 0.30);
+  font-weight: var(--yp-fw-bold);
+  flex: 1.4;
+  transition: background var(--yp-t-fast), border-color var(--yp-t-fast);
+}
+
+.danger-zone__footer .btn--danger-outline:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.50);
+}
+
+.danger-zone__footer .btn--danger-outline svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.danger-zone__footer .btn--danger {
+  background: var(--yp-danger-600);
+  color: white;
+  border: 1px solid var(--yp-danger-700);
+  font-weight: var(--yp-fw-extrabold);
+  flex: 1.4;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  transition: background var(--yp-t-fast), transform var(--yp-t-fast);
+}
+
+.danger-zone__footer .btn--danger:hover:not(:disabled) {
+  background: var(--yp-danger-700);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+}
+
+.danger-zone__footer .btn--danger:disabled {
+  background: var(--yp-border-default);
+  color: var(--yp-text-muted);
+  border-color: transparent;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.danger-zone__footer .btn--danger svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* v1.1: btn--danger-outline generic (not just inside danger-zone__footer) */
+.btn--danger-outline {
+  background: var(--yp-danger-50);
+  color: var(--yp-danger-700);
+  border: 1px solid rgba(220, 38, 38, 0.30);
+  font-weight: var(--yp-fw-bold);
+}
+
+.btn--danger-outline:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.50);
+}
+
+.btn--danger-outline svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* v1.1: btn--danger solid (red destructive action button) */
+.btn--danger-solid {
+  background: var(--yp-danger-600);
+  color: white;
+  border: 1px solid var(--yp-danger-700);
+  font-weight: var(--yp-fw-extrabold);
+  box-shadow: var(--yp-shadow-danger);
+}
+
+.btn--danger-solid:hover:not(:disabled) {
+  background: var(--yp-danger-700);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+}
+
+.btn--danger-solid svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN ACTION SHEET — v1.2
+   Bottom sheet content for "จัดการบัญชี" (account management)
+   Pattern: ypwork manage-sheet — user summary card + grouped actions
+   ═══════════════════════════════════════════════════════════════ */
+
+.admin-action-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yp-space-4);
+  padding: var(--yp-space-2) 0 var(--yp-space-3);
+}
+
+/* ── User summary card (top of sheet) ── */
+.admin-action-sheet__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-4);
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-md);
+}
+
+.admin-action-sheet__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--yp-bg-card);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.admin-action-sheet__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-action-sheet__name {
+  font-size: var(--yp-text-md);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  line-height: 1.3;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-action-sheet__meta {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-action-sheet__chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ── Group (label + list of actions) ── */
+.admin-action-sheet__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yp-space-2);
+}
+
+.admin-action-sheet__group-label {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--yp-text-secondary);
+  padding-left: var(--yp-space-2);
+  padding-right: var(--yp-space-2);
+}
+
+.admin-action-sheet__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Action item (button) ── */
+.admin-action-item {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  transition:
+    background-color var(--yp-t-fast),
+    border-color var(--yp-t-fast),
+    transform 150ms var(--yp-ease-standard);
+  contain: layout style;
+}
+
+.admin-action-item:hover {
+  background: var(--yp-bg-card-soft);
+  border-color: var(--yp-border-sky);
+}
+
+.admin-action-item:active {
+  transform: scale(0.985);
+  background: var(--yp-bg-card-soft);
+}
+
+/* Variant hover tints (matching ypwork manage-sheet__action--danger pattern) */
+.admin-action-item--success:hover {
+  background: rgba(14, 165, 233, 0.04);
+  border-color: rgba(14, 165, 233, 0.30);
+}
+
+.admin-action-item--info:hover {
+  background: rgba(6, 182, 212, 0.04);
+  border-color: rgba(6, 182, 212, 0.30);
+}
+
+.admin-action-item--warning:hover {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.30);
+}
+
+.admin-action-item--danger:hover {
+  background: rgba(244, 63, 94, 0.04);
+  border-color: rgba(244, 63, 94, 0.30);
+}
+
+.admin-action-item--danger:active {
+  background: rgba(244, 63, 94, 0.08);
+}
+
+/* Icon box (38×38 matching ypwork manage-sheet) */
+.admin-action-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--yp-radius-sm);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--yp-border-subtle);
+  background: var(--yp-bg-card-soft);
+  color: var(--yp-text-secondary);
+}
+
+.admin-action-item--success .admin-action-item__icon {
+  background: rgba(14, 165, 233, 0.10);
+  border-color: rgba(14, 165, 233, 0.22);
+  color: var(--yp-sky-600);
+}
+
+.admin-action-item--info .admin-action-item__icon {
+  background: rgba(6, 182, 212, 0.10);
+  border-color: rgba(6, 182, 212, 0.22);
+  color: var(--yp-cyan-600);
+}
+
+.admin-action-item--warning .admin-action-item__icon {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.22);
+  color: #B45309;
+}
+
+.admin-action-item--danger .admin-action-item__icon {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.22);
+  color: #BE123C;
+}
+
+.admin-action-item__icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-action-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-action-item__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.admin-action-item--danger .admin-action-item__title {
+  color: #BE123C;
+}
+
+.admin-action-item__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-action-item__chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   v1.3 — NEW COMPONENTS
+   info-banner, user-dept-summary, current-dept-pill, request-detail
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Info Banner — used in edit-user modal to redirect to dept button ── */
+.info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-sky-soft);
+  border: 1px solid var(--yp-border-sky);
+  border-radius: var(--yp-radius-sm);
+  margin-bottom: var(--yp-space-3);
+}
+
+.info-banner__icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--yp-sky-600);
+}
+
+.info-banner__icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.info-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-banner__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-sky-700);
+  margin-bottom: 2px;
+}
+
+.info-banner__desc {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── User Department Summary (in openEditUserDeptModal) ── */
+.user-dept-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: var(--yp-space-3) var(--yp-space-4);
+  background: var(--yp-bg-card-soft);
+  border-radius: var(--yp-radius-sm);
+  margin-bottom: var(--yp-space-4);
+  border: 1px solid var(--yp-border-subtle);
+}
+
+.user-dept-summary__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid white;
+  box-shadow: var(--yp-shadow-sm);
+}
+
+.user-dept-summary__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-dept-summary__name {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  line-height: 1.3;
+}
+
+.user-dept-summary__meta {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.4;
+}
+
+/* ── Current Department Pill (in openEditUserDeptModal) ── */
+.current-dept-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--yp-space-2);
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--dept-color, var(--yp-sky-500)) 8%, var(--yp-bg-card));
+  border: 1.5px solid color-mix(in srgb, var(--dept-color, var(--yp-sky-500)) 30%, transparent);
+  border-radius: var(--yp-radius-pill);
+  color: var(--dept-color, var(--yp-sky-700));
+  font-weight: var(--yp-fw-semibold);
+  font-size: var(--yp-text-sm);
+}
+
+.current-dept-pill__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.current-dept-pill__name {
+  font-weight: var(--yp-fw-semibold);
+}
+
+/* ── Request Detail (in openRequestDetailSheet) ── */
+.request-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yp-space-4);
+}
+
+.request-detail__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--yp-space-2);
+  padding: var(--yp-space-5) var(--yp-space-4);
+  border-radius: var(--yp-radius-md);
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.request-detail__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(255,255,255,0.10) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.request-detail__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--yp-radius-pill);
+  overflow: hidden;
+  border: 3px solid rgba(255,255,255,0.35);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  position: relative;
+  z-index: 1;
+}
+
+.request-detail__name {
+  font-size: var(--yp-text-lg);
+  font-weight: var(--yp-fw-bold);
+  color: white;
+  position: relative;
+  z-index: 1;
+  line-height: 1.3;
+}
+
+.request-detail__type {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
+}
+
+.request-detail__info {
+  background: var(--yp-bg-card);
+  border: 1px solid var(--yp-border-subtle);
+  border-radius: var(--yp-radius-sm);
+  overflow: hidden;
+}
+
+.request-detail__row {
+  display: flex;
+  align-items: center;
+  gap: var(--yp-space-3);
+  padding: 12px var(--yp-space-4);
+  border-bottom: 1px solid var(--yp-border-subtle);
+}
+
+.request-detail__row:last-child {
+  border-bottom: none;
+}
+
+.request-detail__row-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  background: var(--yp-bg-card-soft);
+  border-radius: var(--yp-radius-pill);
+}
+
+.request-detail__row-label {
+  flex: 1;
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  min-width: 0;
+}
+
+.request-detail__row-value {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  text-align: right;
+  word-break: break-all;
+}
+
+.request-detail__message {
+  background: var(--yp-bg-card-soft);
+  border: 1px solid var(--yp-border-subtle);
+  border-left: 3px solid var(--yp-sky-500);
+  border-radius: var(--yp-radius-sm);
+  padding: var(--yp-space-3) var(--yp-space-4);
+}
+
+.request-detail__message-label {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--yp-sky-700);
+  margin-bottom: 6px;
+}
+
+.request-detail__message-body {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-body);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ── Request card improvements (clickable header) ── */
+.request-card__header {
+  cursor: pointer;
+  transition: background var(--yp-t-fast);
+}
+
+.request-card__header:hover {
+  background: color-mix(in srgb, var(--yp-sky-500) 3%, transparent);
+}
+
+/* ── v1.3: Section label improvements (more breathing room) ── */
+.section-label {
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--yp-text-muted);
+  margin-top: var(--yp-space-5);
+  margin-bottom: var(--yp-space-3);
+  padding: 0 var(--yp-space-1);
+}
+
+.section-label:first-child {
+  margin-top: 0;
+}
+
+/* ── v1.3: Page header improvements ── */
+.page-header {
+  padding: 0 0 var(--yp-space-5);
+}
+
+.page-header__title {
+  margin-bottom: 4px;
+}
+
+/* ── v1.3: Data list spacing improvements ── */
+.data-list {
+  margin-top: var(--yp-space-3);
+}
+
+.data-list__header {
+  padding: var(--yp-space-3) var(--yp-space-4);
+}
+
+.data-list__title {
+  letter-spacing: 0.01em;
+}
+
+/* ── v1.3: Empty state — override only what needs refinement ── */
+/* (Base .empty styles in components.css are good. Keep them.) */
+
+
+/* ═══════════════════════════════════════════════════════════════
+   v1.4 DESIGN REFINEMENTS
+   ────────────────────────────────────────────────────────────────
+   Goal: More breathing room, better visual balance, more pleasant
+   to use. Selective — only touch elements that still feel cramped.
+
+   Key targets:
+   1. Request Detail sheet (hero, info rows, message, footer)
+   2. Dashboard pending alert + recent requests preview
+   3. List items (user-item, request-card, year-card) — subtle pad bump
+   4. Action card grid — more inner space + better desc readability
+   5. Form fields + buttons — taller, more padded, easier to tap
+   6. Sheet body — more generous padding for sheet content
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   1. REQUEST DETAIL SHEET — more spacious hero + rows
+   ──────────────────────────────────────────────────────────── */
+.request-detail {
+  gap: var(--yp-space-5);                 /* was space-4 */
+  padding: var(--yp-space-1) var(--yp-space-1) var(--yp-space-2);
+}
+
+.request-detail__hero {
+  padding: var(--yp-space-6) var(--yp-space-5);   /* was space-5/space-4 */
+  gap: var(--yp-space-3);                          /* was space-2 */
+  border-radius: var(--yp-radius-lg);              /* was md — softer, more premium */
+}
+
+.request-detail__avatar {
+  width: 80px;                                     /* was 72 */
+  height: 80px;
+  border-width: 4px;                               /* was 3 */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+}
+
+.request-detail__name {
+  font-size: var(--yp-text-xl);                    /* was lg */
+  letter-spacing: 0.005em;
+  margin-top: 2px;
+}
+
+.request-detail__type {
+  gap: 8px;                                        /* was 6 */
+  margin-top: 6px;
+}
+
+.request-detail__info {
+  border-radius: var(--yp-radius-md);              /* was sm */
+  background: var(--yp-bg-card-soft);              /* subtle tint to distinguish from white card surface */
+  border-color: var(--yp-border-subtle);
+  padding: var(--yp-space-1) 0;                    /* slight vertical breathing */
+}
+
+.request-detail__row {
+  padding: 14px var(--yp-space-4);                 /* was 12px space-4 */
+  gap: var(--yp-space-3);
+}
+
+.request-detail__row-icon {
+  width: 36px;                                     /* was 32 */
+  height: 36px;
+  font-size: 17px;
+  background: var(--yp-bg-card);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.request-detail__row-label {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-secondary);                 /* was muted — slightly darker for readability */
+  font-weight: var(--yp-fw-medium);
+}
+
+.request-detail__row-value {
+  font-size: var(--yp-text-sm);
+  letter-spacing: 0.005em;
+}
+
+.request-detail__message {
+  padding: var(--yp-space-4) var(--yp-space-5);    /* was space-3/space-4 */
+  border-radius: var(--yp-radius-md);              /* was sm */
+  border-left-width: 4px;                          /* was 3 */
+}
+
+.request-detail__message-label {
+  margin-bottom: 8px;                              /* was 6 */
+  font-size: var(--yp-text-xs);
+}
+
+.request-detail__message-body {
+  font-size: var(--yp-text-sm);
+  line-height: 1.7;                                /* was 1.6 — more readable */
+}
+
+/* ────────────────────────────────────────────────────────────
+   2. DASHBOARD — pending alert + recent requests preview
+   ──────────────────────────────────────────────────────────── */
+.pending-alert {
+  padding: var(--yp-space-5) var(--yp-space-5);    /* was space-4 — more room */
+  gap: var(--yp-space-4);                          /* was space-3 — more separation */
+  border-left-width: 5px;                          /* was 4 — stronger accent */
+  border-radius: var(--yp-radius-lg);              /* was md — softer */
+  margin-bottom: var(--yp-space-6);                /* was space-5 — more space before next section */
+}
+
+.pending-alert__icon {
+  font-size: 26px;                                 /* was 22 */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 158, 11, 0.14);
+  border-radius: var(--yp-radius-pill);
+  flex-shrink: 0;
+}
+
+.pending-alert__title {
+  font-size: var(--yp-text-base);                  /* was sm — slightly bigger */
+  margin-bottom: 2px;
+}
+
+.pending-alert__desc {
+  font-size: var(--yp-text-sm);                    /* was xs — more readable */
+  margin-top: 4px;                                 /* was 2 */
+  line-height: 1.5;
+}
+
+.pending-alert__action {
+  font-size: var(--yp-text-sm);                    /* was xs */
+  font-weight: var(--yp-fw-bold);
+  padding-left: var(--yp-space-2);
+}
+
+/* Recent requests preview on dashboard — more breathing room per row */
+.page .data-list .list-item[data-action="open-request"] {
+  padding: var(--yp-space-4) var(--yp-space-4);    /* was list-pad (15/18) — more vertical */
+  min-height: 68px;                                /* was 60px */
+  gap: var(--yp-space-4);                          /* was space-3 — more separation between icon/body */
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__icon {
+  width: 44px;                                     /* was 38 */
+  height: 44px;
+  font-size: 20px;
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__title {
+  font-size: var(--yp-text-sm);                    /* keep */
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  margin-bottom: 3px;
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__subtitle {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.45;
+}
+
+/* ────────────────────────────────────────────────────────────
+   3. LIST ITEMS — subtle breathing bump (selective)
+   Only user-item gets more vertical room; year-card + request-card
+   get a slight gap bump. Not everywhere — keep stat-card tight.
+   ──────────────────────────────────────────────────────────── */
+.user-item {
+  padding: var(--yp-space-4) var(--yp-list-pad-x);   /* was calc(list-pad-y + 2px) — more vertical */
+  min-height: 68px;                                   /* was 64 */
+  gap: var(--yp-space-4);                              /* was space-3 — more avatar↔body separation */
+}
+
+.user-item__avatar {
+  width: 46px;                                        /* was 44 — slightly bigger */
+  height: 46px;
+}
+
+.user-item__title {
+  font-size: var(--yp-text-sm);
+  margin-bottom: 2px;
+}
+
+.user-item__subtitle {
+  margin-top: 5px;                                    /* was 4 */
+  gap: 8px;                                           /* was 6 */
+}
+
+.request-card {
+  margin-bottom: var(--yp-space-4);                   /* was space-3 — more separation between cards */
+}
+
+.request-card__header {
+  padding: var(--yp-space-5) var(--yp-space-4);       /* was space-4 — more vertical */
+  gap: var(--yp-space-4);                              /* was space-3 */
+}
+
+.request-card__avatar {
+  width: 48px;                                        /* was 44 */
+  height: 48px;
+}
+
+.request-card__title {
+  margin-bottom: 6px;                                 /* was 4 */
+}
+
+.request-card__subtitle {
+  gap: 12px;                                          /* was 10 */
+  line-height: 1.5;
+}
+
+.request-card__message {
+  padding: var(--yp-space-4) var(--yp-space-5);       /* was space-3/space-4 */
+  line-height: 1.6;                                   /* was 1.55 */
+}
+
+.request-card__actions {
+  padding: var(--yp-space-4) var(--yp-space-5);       /* was space-3/space-4 */
+  gap: var(--yp-space-3);                              /* was space-2 — more separation between buttons */
+}
+
+.year-card {
+  padding: var(--yp-space-5) var(--yp-space-4);       /* was space-4 */
+  margin-bottom: var(--yp-space-4);                   /* was space-3 */
+  gap: var(--yp-space-5);                              /* was space-4 */
+}
+
+.year-card__number {
+  min-width: 64px;                                    /* was 56 — more room for 4-digit year */
+  font-size: var(--yp-text-2xl);                      /* was xl — make year pop more */
+}
+
+/* ────────────────────────────────────────────────────────────
+   4. ACTION CARD — more inner space + better desc readability
+   ──────────────────────────────────────────────────────────── */
+.action-card {
+  padding: var(--yp-space-5);                         /* was space-4 — more room all around */
+  gap: var(--yp-space-4);                              /* was space-3 — more separation between header / body / footer */
+}
+
+.action-card__icon {
+  width: 48px;                                        /* was 44 */
+  height: 48px;
+  font-size: 24px;                                    /* was 22 */
+  border-radius: var(--yp-radius-md);                 /* was sm — rounder for friendlier feel */
+}
+
+.action-card__title {
+  font-size: var(--yp-text-base);                     /* was md — slightly bigger for clarity */
+  margin-bottom: 2px;
+}
+
+.action-card__desc {
+  font-size: var(--yp-text-sm);                       /* was xs — more readable */
+  line-height: 1.55;                                  /* was 1.5 */
+}
+
+.action-card__footer {
+  font-size: var(--yp-text-xs);                       /* keep */
+  margin-top: 2px;
+}
+
+.action-grid {
+  gap: var(--yp-space-4);                              /* was space-3 — more separation between cards */
+}
+
+/* ────────────────────────────────────────────────────────────
+   5. FORM FIELDS + BUTTONS — taller, more padded, easier to tap
+   ──────────────────────────────────────────────────────────── */
+.input,
+.select {
+  min-height: 48px;                                   /* consistent tap target (matches base) */
+  padding: 12px var(--yp-space-4);
+  font-size: var(--yp-text-sm);
+}
+
+.textarea {
+  padding: 12px var(--yp-space-4);
+  font-size: var(--yp-text-sm);
+  line-height: 1.55;
+  /* min-height stays at 100px from base.css */
+}
+
+.field__label {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-secondary);
+  margin-bottom: 8px;                                 /* was 6px implicit */
+  letter-spacing: 0.005em;
+}
+
+.field__hint {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.btn {
+  min-height: 44px;                                   /* explicit minimum — was 38-40 default */
+  padding: 11px var(--yp-space-5);                    /* slightly more vertical room */
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  letter-spacing: 0.005em;
+  border-radius: var(--yp-radius-control);
+  gap: var(--yp-space-2);
+}
+
+.btn--block {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn--lg,
+.btn--large {
+  min-height: 50px;
+  font-size: var(--yp-text-base);
+  padding: 13px var(--yp-space-6);
+}
+
+/* btn--sm stays compact (for icon-only buttons in tight rows) */
+.btn--sm {
+  min-height: 36px;
+  padding: 6px var(--yp-space-3);
+  font-size: var(--yp-text-xs);
+}
+
+/* ────────────────────────────────────────────────────────────
+   6. SHEET FOOTER + ACTIONS — more spacious footer
+   (Note: sheet__body padding is intentionally minimal — only 4px
+   horizontal — to keep focus rings visible. We don't touch it.)
+   ──────────────────────────────────────────────────────────── */
+.sheet__footer {
+  padding: var(--yp-space-5) var(--yp-space-5)
+           calc(var(--yp-safe-bottom) + var(--yp-space-5));
+}
+
+.sheet__actions {
+  gap: var(--yp-space-3);                              /* was tighter — more separation */
+}
+
+/* ────────────────────────────────────────────────────────────
+   7. SECTION LABEL + DATA LIST HEADER — more breathing
+   ──────────────────────────────────────────────────────────── */
+.section-label {
+  margin-top: var(--yp-space-6);                      /* was space-5 — more separation between sections */
+  margin-bottom: var(--yp-space-4);                   /* was space-3 */
+  letter-spacing: 0.12em;                             /* was 0.10 — slightly more refined */
+}
+
+.data-list__header {
+  padding: var(--yp-space-4) var(--yp-space-4);       /* was space-3/space-4 */
+  margin-bottom: var(--yp-space-1);
+}
+
+/* ────────────────────────────────────────────────────────────
+   8. PAGE HEADER — more bottom breathing room
+   ──────────────────────────────────────────────────────────── */
+.page-header {
+  padding: 0 0 var(--yp-space-6);                     /* was space-5 — more room before content */
+}
+
+.page-header__title {
+  margin-bottom: 6px;                                 /* was 4 */
+}
+
+.page-header__subtitle {
+  margin-top: 8px;                                    /* was 6 */
+  line-height: 1.55;
+}
+
+/* ────────────────────────────────────────────────────────────
+   9. STAT CARD — slightly more padding for less cramped feel
+   ──────────────────────────────────────────────────────────── */
+.stat-card {
+  padding: var(--yp-space-5) var(--yp-space-4);       /* was space-4 — more vertical */
+  gap: 4px;                                            /* was 2 */
+}
+
+.stat-card__value {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.stat-card__sub {
+  margin-top: 4px;                                     /* was 2 */
+  line-height: 1.45;
+}
+
+/* ────────────────────────────────────────────────────────────
+   10. ADMIN HERO (dashboard) — slightly more breathing
+   ──────────────────────────────────────────────────────────── */
+.admin-hero {
+  padding: var(--yp-space-7) var(--yp-space-6);       /* was space-6/space-5 */
+  margin-bottom: var(--yp-space-6);                   /* keep */
+}
+
+.admin-hero__name {
+  font-size: var(--yp-text-2xl);                      /* was xl — bring back the "wow" */
+  margin-bottom: 6px;                                 /* was 4 */
+}
+
+.admin-hero__date {
+  margin-bottom: var(--yp-space-6);                   /* was space-5 — more room before stats divider */
+}
+
+.admin-hero__stats {
+  padding-top: var(--yp-space-5);                     /* was space-4 — more separation */
+  gap: var(--yp-space-3);                              /* was space-2 */
+}
+
+.admin-hero__stat-value {
+  font-size: var(--yp-text-2xl);                      /* was xl — more emphasis */
+}
+
+.admin-hero__stat-label {
+  font-size: 11px;
+  margin-top: 6px;                                     /* was 4 */
+}
+
+/* ────────────────────────────────────────────────────────────
+   11. DEPARTMENT CARD — slight breathing bump (matches user-item rhythm)
+   ──────────────────────────────────────────────────────────── */
+.dept-card {
+  padding: var(--yp-space-5) var(--yp-space-4);       /* was space-4 */
+  gap: var(--yp-space-4);                              /* was space-3 */
+}
+
+.dept-card__icon {
+  width: 48px;                                        /* was 44 */
+  height: 48px;
+  font-size: 24px;                                    /* was 22 */
+  border-radius: var(--yp-radius-md);                 /* was sm */
+}
+
+.dept-card__title {
+  font-size: var(--yp-text-base);                     /* was md */
+  margin-bottom: 4px;                                 /* was 2 */
+}
+
+.dept-card__desc {
+  line-height: 1.55;                                  /* was 1.5 */
+}
+
+.dept-card__meta {
+  margin-top: var(--yp-space-3);                      /* was space-2 */
+}
+
+/* ────────────────────────────────────────────────────────────
+   12. SEARCH BAR + FILTER BAR — more spacious
+   ──────────────────────────────────────────────────────────── */
+.search-bar {
+  padding: 0 var(--yp-space-4);                       /* was space-3 */
+  min-height: 48px;                                   /* explicit tap target */
+  margin-bottom: var(--yp-space-4);                   /* keep */
+  border-radius: var(--yp-radius-control);
+}
+
+.search-bar__input {
+  padding: 12px 0;                                    /* explicit vertical pad */
+  font-size: var(--yp-text-sm);
+}
+
+.filter-bar {
+  gap: var(--yp-space-3);                              /* was space-2 — more space between selects */
+  margin-bottom: var(--yp-space-4);
+}
+
+.filter-bar__select {
+  min-height: 44px;                                   /* explicit tap target */
+  padding: 0 var(--yp-space-4);
+  font-size: var(--yp-text-sm);
+  border-radius: var(--yp-radius-control);
+}
+
+/* ────────────────────────────────────────────────────────────
+   13. SETTINGS ITEM (used in user detail + profile) — more tap room
+   ──────────────────────────────────────────────────────────── */
+.settings-item {
+  min-height: 60px;                                   /* was 56 — bigger tap target */
+  padding: var(--yp-space-4) var(--yp-space-4);       /* was list-pad */
+  gap: var(--yp-space-4);                              /* was space-3 */
+}
+
+.settings-item__icon {
+  width: 40px;                                        /* was 38 — slightly bigger */
+  height: 40px;
+  font-size: 19px;
+}
+
+.settings-item__title {
+  font-size: var(--yp-text-sm);
+  margin-bottom: 3px;                                 /* was 2 */
+}
+
+.settings-item__subtitle {
+  font-size: var(--yp-text-xs);
+  line-height: 1.45;
+}
+
+/* ────────────────────────────────────────────────────────────
+   14. DASHBOARD hero stats grid — more breathing between cells
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 380px) {
+  /* On very small phones, hero stats can get cramped — reduce label size */
+  .admin-hero__stats {
+    gap: var(--yp-space-2);
+  }
+  .admin-hero__stat-value {
+    font-size: var(--yp-text-xl);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   15. INFO BANNER (used in edit user modal) — more breathing
+   ──────────────────────────────────────────────────────────── */
+.info-banner {
+  padding: var(--yp-space-4) var(--yp-space-4);       /* was tighter */
+  gap: var(--yp-space-3);
+  border-radius: var(--yp-radius-md);                 /* was sm */
+  border-left-width: 4px;                             /* was 3 */
+}
+
+.info-banner__title {
+  font-size: var(--yp-text-sm);
+  margin-bottom: 3px;
+}
+
+.info-banner__desc {
+  font-size: var(--yp-text-xs);
+  line-height: 1.55;
+}
+
+/* ────────────────────────────────────────────────────────────
+   16. ADMIN ACTION SHEET (manage account) — more spacious groups
+   ──────────────────────────────────────────────────────────── */
+.admin-action-sheet {
+  gap: var(--yp-space-5);                              /* was space-4 — more separation between groups */
+}
+
+.admin-action-sheet__group-label {
+  margin-bottom: var(--yp-space-3);
+  padding: 0 var(--yp-space-1);
+}
+
+.admin-action-item {
+  padding: var(--yp-space-4);                         /* was 12/16 — more generous */
+  gap: var(--yp-space-3);                              /* was space-3 */
+  border-radius: var(--yp-radius-md);                 /* was sm */
+}
+
+.admin-action-item__icon {
+  width: 40px;                                        /* was 38 */
+  height: 40px;
+  font-size: 19px;
+}
+
+.admin-action-item__title {
+  font-size: var(--yp-text-sm);
+  margin-bottom: 3px;
+}
+
+.admin-action-item__desc {
+  font-size: var(--yp-text-xs);
+  line-height: 1.5;
+}
+
+/* ────────────────────────────────────────────────────────────
+   17. SHEET HEADER — slightly more breathing below title bar
+       (Original uses margin-bottom for spacing — we just bump it.)
+   ──────────────────────────────────────────────────────────── */
+.sheet__header {
+  margin-bottom: var(--yp-space-5);                   /* was space-4 — more breathing before body */
+}
+
+.sheet__title {
+  font-size: var(--yp-text-base);                     /* was lg — slightly smaller, more refined */
+  letter-spacing: 0.005em;
+}
+
+/* ────────────────────────────────────────────────────────────
+   18. TOAST — more breathing for readability
+   ──────────────────────────────────────────────────────────── */
+.toast {
+  padding: var(--yp-space-3) var(--yp-space-4);
+  gap: var(--yp-space-3);
+  font-size: var(--yp-text-sm);
+  border-radius: var(--yp-radius-md);
+  min-height: 48px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   19. CHIP — slightly taller for better legibility
+   ──────────────────────────────────────────────────────────── */
+.chip {
+  padding: 4px 10px;
+  font-size: var(--yp-text-xs);
+  border-radius: var(--yp-radius-pill);
+  letter-spacing: 0.01em;
+  font-weight: var(--yp-fw-semibold);
+}
+
+/* ────────────────────────────────────────────────────────────
+   20. CONTAINER MAX WIDTH on small phones — prevent edges feeling tight
+   ──────────────────────────────────────────────────────────── */
+.page.container {
+  padding-left: var(--yp-page-pad-x);
+  padding-right: var(--yp-page-pad-x);
+}
+
+@media (max-width: 380px) {
+  :root {
+    --yp-page-pad-x: 1rem;        /* was 1.25rem — give content more room on tiny phones */
+  }
+  .admin-hero {
+    padding: var(--yp-space-6) var(--yp-space-5);
+  }
+  .admin-hero__stats {
+    grid-template-columns: repeat(2, 1fr);   /* was 4 — too cramped on tiny phones */
+    gap: var(--yp-space-3);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   21. DANGER ZONE — more breathing in destructive sheets
+   ──────────────────────────────────────────────────────────── */
+.danger-zone__hero {
+  padding: var(--yp-space-5) var(--yp-space-5);       /* was space-4 */
+  gap: var(--yp-space-4);                              /* was space-3 */
+  border-radius: var(--yp-radius-md);
+  margin-bottom: var(--yp-space-5);                   /* was space-4 */
+}
+
+.danger-zone__impact {
+  padding: var(--yp-space-4) var(--yp-space-5);       /* was space-3/space-4 */
+  margin-bottom: var(--yp-space-5);                   /* was space-4 */
+  border-radius: var(--yp-radius-md);                 /* was sm */
+}
+
+.danger-zone__impact-list {
+  gap: 10px;                                           /* was 8 */
+}
+
+.danger-zone__impact-list li {
+  font-size: var(--yp-text-sm);
+  line-height: 1.55;
+}
+
+.danger-zone__footer {
+  padding-top: var(--yp-space-4);                     /* ensure some breathing above buttons */
+}
+
+.danger-zone__hint {
+  padding: var(--yp-space-4);                         /* was space-3 */
+  border-radius: var(--yp-radius-sm);
+}
+
+/* ────────────────────────────────────────────────────────────
+   22. LOGIN PAGE — more breathing (improves first impression)
+   ──────────────────────────────────────────────────────────── */
+.login__card {
+  padding: var(--yp-space-7) var(--yp-space-6);       /* was tighter */
+  gap: var(--yp-space-5);
+  border-radius: var(--yp-radius-lg);
+}
+
+.login__hint {
+  padding: var(--yp-space-4) var(--yp-space-4);       /* was space-3/space-4 */
+  min-height: 60px;                                   /* explicit tap target */
+  border-radius: var(--yp-radius-md);                 /* was sm */
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   v1.5 DESIGN REFINEMENTS — Calmer, more balanced, more inviting
+   ────────────────────────────────────────────────────────────────
+   Goals:
+   - "น่าใช้งานมากยิ่งขึ้น" (more inviting) → cleaner card hierarchy,
+     remove redundant elements (footer "แตะเพื่อจัดการ →" on action-card)
+   - "พื้นที่ดูมี space" (more breathing) → generous gaps inside cards,
+     more separation between sections
+   - "สมดุล" + "ดูนิ่งมากยิ่งขึ้น" (balanced, calmer) → soften the
+     colored accent bars that were creating visual clutter; replace
+     emoji icons with SVG icons for consistency
+
+   Key changes:
+   1. ACTION-CARD: new horizontal layout (icon | body | badge+chevron)
+      — removed redundant footer line, softened left accent bar
+   2. YEAR-CARD: year number now sits in a colored "tile" for visual
+      structure (instead of floating text)
+   3. STAT-CARD: top accent bar shortened + softened
+   4. DEPT-CARD: left accent bar softened (shorter, more subtle)
+   5. REQUEST-CARD: left accent bar softened
+   6. PENDING-ALERT: SVG clock icon (was emoji), better chevron
+   7. ADMIN-HERO: stats grid breathing, label refinement
+   8. SECTION-SPACING: more separation between major sections
+   9. General: calmer shadows, softer borders
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────
+   1. ACTION-CARD — new horizontal layout
+   Before: vertical stack [icon+badge, title+desc, footer "แตะเพื่อจัดการ →"]
+           (5 elements crammed into a small card, footer was redundant)
+   After:  horizontal [icon | body | badge+chevron] — 3 visual zones
+           The whole card is already clickable, so no need for a CTA.
+   ──────────────────────────────────────────────────────────── */
+.action-card {
+  flex-direction: row;                                /* was column — now horizontal */
+  align-items: center;
+  padding: var(--yp-space-5) var(--yp-space-5);       /* uniform generous padding */
+  gap: var(--yp-space-4);                              /* was space-4 between zones */
+}
+
+/* Soften the left accent bar — make it shorter and more subtle */
+.action-card::before {
+  left: 0;
+  top: 28%;                                           /* was top:22px / bottom:22px — now proportional */
+  bottom: 28%;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  opacity: 0.85;                                       /* slightly subtle */
+}
+
+/* Keep the halo but soften it */
+.action-card::after {
+  opacity: 0.04;                                       /* was 0.05 — calmer */
+}
+
+.action-card:hover::before {
+  top: 18%;                                           /* was top:0 — now subtle extension */
+  bottom: 18%;
+}
+
+/* Icon: bigger, more prominent (the "anchor" of the card) */
+.action-card__icon {
+  width: 52px;                                        /* was 48 */
+  height: 52px;
+  border-radius: var(--yp-radius-md);
+  font-size: 24px;
+  background: color-mix(in srgb, var(--action-color, var(--yp-sky-500)) 13%, transparent);
+  color: var(--action-color, var(--yp-sky-600));
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.action-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.action-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-card__title {
+  font-size: var(--yp-text-base);                     /* was md (15px) — bigger for clearer hierarchy */
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-strong);
+  line-height: 1.3;
+  letter-spacing: 0.005em;
+}
+
+.action-card__desc {
+  font-size: var(--yp-text-sm);                       /* was xs — more readable */
+  color: var(--yp-text-secondary);                    /* was muted — slightly darker for readability */
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;                              /* keep one line for horizontal layout */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Badge: now sits to the right (was top-right corner) */
+.action-card__badge {
+  font-size: 11px;
+  font-weight: var(--yp-fw-bold);
+  padding: 3px 9px;
+  border-radius: var(--yp-radius-pill);
+  background: color-mix(in srgb, var(--action-color, var(--yp-sky-500)) 13%, transparent);
+  color: var(--action-color, var(--yp-sky-700));
+  flex-shrink: 0;
+  min-width: 26px;
+  text-align: center;
+}
+
+.action-card__badge--urgent {
+  background: rgba(244, 63, 94, 0.10);
+  color: #BE123C;
+}
+
+/* Chevron arrow — indicates the card is clickable (replaces the old text footer) */
+.action-card__arrow {
+  width: 18px;
+  height: 18px;
+  color: var(--yp-text-faint);
+  flex-shrink: 0;
+  transition: transform var(--yp-t-fast), color var(--yp-t-fast);
+}
+
+.action-card__arrow svg {
+  width: 18px;
+  height: 18px;
+}
+
+.action-card:hover .action-card__arrow {
+  color: var(--action-color, var(--yp-sky-500));
+  transform: translateX(2px);
+}
+
+/* Remove the old footer rule (the .action-card__footer no longer exists in DOM,
+   but we keep the rule from overriding) */
+.action-card__footer {
+  display: none;
+}
+
+/* Keep action-grid gap generous */
+.action-grid {
+  gap: var(--yp-space-3);                              /* slightly tighter grid — individual cards already have more breathing */
+}
+
+/* On wide screens (≥900px) keep 3 columns; on 600px keep 2; below 600 keep 1.
+   Cards are now wider horizontally — wider layout works better */
+@media (min-width: 600px) {
+  .action-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   2. YEAR-CARD — year number now sits in a colored "tile"
+   Before: year was just floating text on the left, hard to scan
+   After:  year sits inside a tinted square tile — visual anchor
+   ──────────────────────────────────────────────────────────── */
+.year-card {
+  padding: var(--yp-space-5) var(--yp-space-5);       /* was space-5/space-4 — uniform */
+  gap: var(--yp-space-5);
+  align-items: center;
+}
+
+/* Soften left accent bar */
+.year-card::before {
+  top: 30%;                                           /* was 22px/22px */
+  bottom: 30%;
+  opacity: 0.85;
+}
+
+.year-card__number {
+  display: grid;
+  place-items: center;
+  min-width: 72px;                                    /* was 64 — tile is bigger */
+  height: 56px;                                       /* explicit height — makes it a tile */
+  padding: 0 var(--yp-space-2);
+  font-size: var(--yp-text-xl);                       /* was 2xl — slightly smaller for tile balance */
+  font-weight: var(--yp-fw-extrabold);
+  color: var(--year-color, var(--yp-sky-700));
+  background: color-mix(in srgb, var(--year-color, var(--yp-sky-500)) 12%, transparent);
+  border-radius: var(--yp-radius-sm);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.year-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.year-card__badges {
+  gap: 8px;                                           /* was 6 — more breathing between badges */
+  margin-bottom: 5px;                                 /* was 4 */
+}
+
+.year-card__slot {
+  font-size: var(--yp-text-sm);                       /* was 11px — more readable */
+  font-weight: var(--yp-fw-bold);
+}
+
+.year-card__hint {
+  font-size: var(--yp-text-xs);
+  line-height: 1.45;
+  color: var(--yp-text-muted);                        /* was faint — slightly darker */
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   3. STAT-CARD — soften the top accent bar
+   Before: full-width 3px top bar — visually heavy on 4 cards stacked
+   After:  shorter (60% width, 2px) bar — calmer, more refined
+   ──────────────────────────────────────────────────────────── */
+.stat-card {
+  padding: var(--yp-space-5) var(--yp-space-4);
+  border-radius: var(--yp-radius-md);
+  gap: 3px;
+}
+
+.stat-card__bar {
+  width: 32px;                                        /* was full width — now a small accent tab */
+  height: 3px;
+  left: var(--yp-space-4);                            /* align with content padding */
+  right: auto;
+  border-radius: var(--yp-radius-pill);
+  top: 0;
+  background: var(--stat-color, var(--yp-sky-500));
+  opacity: 0.9;
+}
+
+.stat-card__label {
+  font-size: var(--yp-text-xs);
+  letter-spacing: 0.04em;                             /* slightly more refined */
+  margin-top: 2px;                                     /* push past the bar */
+}
+
+.stat-card__value {
+  font-size: var(--yp-text-2xl);                      /* was xl — make value the hero */
+  margin: 2px 0;
+  letter-spacing: -0.025em;
+}
+
+.stat-card__sub {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);                        /* was faint — slightly darker */
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* Halo softened */
+.stat-card::before {
+  opacity: 0.04;                                       /* was 0.05 */
+}
+.stat-card:hover::before {
+  opacity: 0.08;                                       /* was 0.10 */
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   4. DEPT-CARD — soften left accent bar
+   ──────────────────────────────────────────────────────────── */
+.dept-card {
+  padding: var(--yp-space-5) var(--yp-space-5);
+  gap: var(--yp-space-4);
+  align-items: center;
+}
+
+.dept-card::before {
+  top: 30%;                                           /* was 22px/22px */
+  bottom: 30%;
+  opacity: 0.85;
+}
+
+.dept-card:hover::before {
+  top: 18%;
+  bottom: 18%;
+}
+
+.dept-card::after {
+  opacity: 0.04;                                       /* was 0.05 */
+}
+
+.dept-card__icon {
+  width: 52px;                                        /* was 48 */
+  height: 52px;
+  border-radius: var(--yp-radius-md);
+  font-size: 24px;
+}
+
+.dept-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dept-card__title {
+  font-size: var(--yp-text-base);                     /* was md — bigger for clearer hierarchy */
+  margin-bottom: 3px;
+}
+
+.dept-card__desc {
+  font-size: var(--yp-text-sm);                       /* was xs */
+  color: var(--yp-text-secondary);                    /* was muted */
+  line-height: 1.5;
+}
+
+.dept-card__meta {
+  margin-top: var(--yp-space-3);
+  gap: 8px;                                           /* was space-2 */
+  color: var(--yp-text-muted);                        /* was faint */
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   5. REQUEST-CARD — soften left accent bar
+   ──────────────────────────────────────────────────────────── */
+.request-card {
+  margin-bottom: var(--yp-space-4);
+}
+
+.request-card::before {
+  width: 3px;
+  opacity: 0.85;
+}
+
+.request-card::after {
+  opacity: 0.03;                                       /* was 0.04 */
+}
+
+.request-card__header {
+  padding: var(--yp-space-5) var(--yp-space-5);
+  gap: var(--yp-space-4);
+}
+
+.request-card__avatar {
+  width: 50px;                                        /* was 48 */
+  height: 50px;
+}
+
+.request-card__title {
+  font-size: var(--yp-text-base);                     /* was md — bigger */
+  margin-bottom: 6px;
+}
+
+.request-card__subtitle {
+  font-size: var(--yp-text-sm);                       /* was xs — more readable */
+  color: var(--yp-text-secondary);                    /* was muted */
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.request-card__message {
+  padding: var(--yp-space-4) var(--yp-space-5);
+  font-size: var(--yp-text-sm);
+  line-height: 1.65;
+  color: var(--yp-text-secondary);
+}
+
+.request-card__actions {
+  padding: var(--yp-space-4) var(--yp-space-5);
+  gap: var(--yp-space-3);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   6. PENDING-ALERT — SVG icon (was emoji), better chevron
+   ──────────────────────────────────────────────────────────── */
+.pending-alert {
+  padding: var(--yp-space-5) var(--yp-space-5);
+  gap: var(--yp-space-4);
+  border-left-width: 4px;                             /* was 5 — slightly less aggressive */
+  border-radius: var(--yp-radius-lg);
+  margin-bottom: var(--yp-space-6);
+  background: rgba(245, 158, 11, 0.07);               /* slightly calmer tint */
+}
+
+.pending-alert__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: rgba(245, 158, 11, 0.14);
+  border-radius: var(--yp-radius-pill);
+  flex-shrink: 0;
+  color: #B45309;
+  font-size: 0;                                        /* reset — SVG uses width/height */
+}
+
+.pending-alert__icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pending-alert__title {
+  font-size: var(--yp-text-base);
+  margin-bottom: 3px;
+  color: #92400E;                                     /* slightly darker — better contrast */
+}
+
+.pending-alert__desc {
+  font-size: var(--yp-text-sm);
+  margin-top: 4px;
+  line-height: 1.5;
+  color: #B45309;
+  opacity: 0.85;
+}
+
+.pending-alert__action {
+  width: 22px;
+  height: 22px;
+  color: #B45309;
+  flex-shrink: 0;
+  opacity: 0.7;
+  display: grid;
+  place-items: center;
+  font-size: 0;
+}
+
+.pending-alert__action svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   7. ADMIN-HERO — better stat grid breathing
+   ──────────────────────────────────────────────────────────── */
+.admin-hero {
+  padding: var(--yp-space-7) var(--yp-space-6);
+  margin-bottom: var(--yp-space-6);
+}
+
+.admin-hero__greeting {
+  font-size: var(--yp-text-sm);
+  margin-bottom: 4px;
+}
+
+.admin-hero__name {
+  font-size: var(--yp-text-2xl);
+  margin-bottom: 6px;
+  letter-spacing: 0.005em;
+}
+
+.admin-hero__date {
+  margin-bottom: var(--yp-space-6);
+  opacity: 0.88;
+}
+
+.admin-hero__stats {
+  padding-top: var(--yp-space-5);
+  gap: var(--yp-space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.admin-hero__stat-value {
+  font-size: var(--yp-text-2xl);
+  font-weight: var(--yp-fw-extrabold);
+  line-height: 1;
+}
+
+.admin-hero__stat-label {
+  font-size: var(--yp-text-xs);
+  margin-top: 6px;
+  opacity: 0.78;
+  letter-spacing: 0.03em;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   8. SECTION SPACING — more separation between major sections
+   ──────────────────────────────────────────────────────────── */
+.section-label {
+  margin-top: var(--yp-space-7);                      /* was space-6 — more separation */
+  margin-bottom: var(--yp-space-4);
+  letter-spacing: 0.12em;
+  font-size: var(--yp-text-xs);
+  font-weight: var(--yp-fw-bold);
+  color: var(--yp-text-secondary);
+}
+
+/* First section-label in a page should not have huge top margin */
+.section-label:first-child,
+.admin-hero + .section-label {
+  margin-top: var(--yp-space-1);
+}
+
+.page-header {
+  padding: 0 0 var(--yp-space-6);
+}
+
+.page-header__title {
+  margin-bottom: 6px;
+}
+
+.page-header__subtitle {
+  margin-top: 8px;
+  line-height: 1.55;
+  color: var(--yp-text-secondary);
+}
+
+.data-list {
+  margin-top: var(--yp-space-4);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   9. USER-ITEM — better balance, slightly bigger avatar
+   ──────────────────────────────────────────────────────────── */
+.user-item {
+  padding: var(--yp-space-4) var(--yp-space-5);
+  min-height: 72px;                                   /* was 68 — more breathing */
+  gap: var(--yp-space-4);
+}
+
+.user-item__avatar {
+  width: 48px;                                        /* was 46 */
+  height: 48px;
+}
+
+.user-item__title {
+  font-size: var(--yp-text-sm);                       /* keep */
+  margin-bottom: 3px;
+}
+
+.user-item__subtitle {
+  margin-top: 5px;
+  gap: 8px;
+  line-height: 1.45;
+  color: var(--yp-text-muted);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   10. RECENT REQUESTS preview list — better balance
+   ──────────────────────────────────────────────────────────── */
+.page .data-list .list-item[data-action="open-request"] {
+  padding: var(--yp-space-4) var(--yp-space-5);
+  min-height: 72px;                                   /* was 68 */
+  gap: var(--yp-space-4);
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__icon {
+  width: 44px;
+  height: 44px;
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__title {
+  font-size: var(--yp-text-sm);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  margin-bottom: 3px;
+}
+
+.page .data-list .list-item[data-action="open-request"] .list-item__subtitle {
+  font-size: var(--yp-text-xs);
+  color: var(--yp-text-muted);
+  line-height: 1.45;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   11. CALMER SHADOWS + SOFTER BORDERS (general)
+   ──────────────────────────────────────────────────────────── */
+.stat-card,
+.action-card,
+.dept-card,
+.request-card,
+.year-card {
+  border-color: var(--yp-border-subtle);              /* unify — was mix of subtle/default */
+}
+
+.stat-card:hover,
+.action-card:hover,
+.dept-card:hover {
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);     /* was 12px shadow — calmer */
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   12. SETTINGS-ITEM, ADMIN-ACTION-ITEM — keep rhythm consistent
+   ──────────────────────────────────────────────────────────── */
+.settings-item {
+  min-height: 64px;                                   /* was 60 */
+  padding: var(--yp-space-4) var(--yp-space-5);
+  gap: var(--yp-space-4);
+}
+
+.admin-action-item {
+  padding: var(--yp-space-4) var(--yp-space-5);
+  border-radius: var(--yp-radius-md);
+}
+
+.admin-action-item__icon {
+  width: 44px;                                        /* was 40 — match action-card rhythm */
+  height: 44px;
+  font-size: 20px;
+}
+
+.admin-action-item__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   13. SEARCH-BAR + FILTER-BAR — better breathing
+   ──────────────────────────────────────────────────────────── */
+.search-bar {
+  padding: 0 var(--yp-space-5);
+  min-height: 50px;                                   /* was 48 — slightly taller */
+  margin-bottom: var(--yp-space-4);
+}
+
+.search-bar__icon {
+  width: 20px;                                        /* was 18 */
+  height: 20px;
+}
+
+.search-bar__icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-bar__input {
+  padding: var(--yp-space-3) 0;
+  font-size: var(--yp-text-sm);
+}
+
+.filter-bar {
+  gap: var(--yp-space-3);
+  margin-bottom: var(--yp-space-5);                   /* was space-4 — more breathing */
+}
+
+.filter-bar__select {
+  min-height: 44px;
+  padding: 0 var(--yp-space-4);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   14. EMPTY STATE — calmer
+   ──────────────────────────────────────────────────────────── */
+.empty {
+  padding: var(--yp-space-8) var(--yp-space-5);       /* more breathing */
+  text-align: center;
+}
+
+.empty__icon {
+  font-size: 48px;                                     /* explicit size */
+  margin-bottom: var(--yp-space-4);
+  opacity: 0.8;
+}
+
+.empty__title {
+  font-size: var(--yp-text-base);
+  font-weight: var(--yp-fw-semibold);
+  color: var(--yp-text-strong);
+  margin-bottom: 6px;
+}
+
+.empty__desc {
+  font-size: var(--yp-text-sm);
+  color: var(--yp-text-muted);
+  line-height: 1.55;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   15. SHEET — softer internal rhythm
+   ──────────────────────────────────────────────────────────── */
+.sheet__header {
+  margin-bottom: var(--yp-space-5);
+}
+
+.sheet__title {
+  font-size: var(--yp-text-base);
+  letter-spacing: 0.005em;
+}
+
+.sheet__footer {
+  padding: var(--yp-space-5) var(--yp-space-5)
+           calc(var(--yp-safe-bottom) + var(--yp-space-5));
+}
+
+.sheet__actions {
+  gap: var(--yp-space-3);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   16. TINY PHONES (≤380px) — keep new layouts working
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 380px) {
+  :root {
+    --yp-page-pad-x: 1rem;
+  }
+
+  .admin-hero {
+    padding: var(--yp-space-6) var(--yp-space-5);
+  }
+
+  .admin-hero__stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--yp-space-4);
+  }
+
+  .action-card {
+    padding: var(--yp-space-4);
+  }
+
+  .action-card__icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .year-card {
+    padding: var(--yp-space-4);
+  }
+
+  .year-card__number {
+    min-width: 64px;
+    height: 50px;
+    font-size: var(--yp-text-lg);
+  }
+}
