@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthProvider, useAuth } from "@/components/framework/auth-provider";
@@ -35,9 +35,16 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // ── Client-side auth guard (backup — middleware handles this server-side) ──
+  useEffect(() => {
+    if (!loading && !user) {
+      // Middleware should have already redirected, but just in case:
+      router.replace("/login");
+    }
+  }, [loading, user, router]);
+
   // Determine route meta — detail pages (users/[id], departments/[id], requests/[id]) show back button
   const meta = (() => {
-    // Detail page: /users/[id]
     if (pathname.startsWith("/users/")) {
       return { title: "รายละเอียดบัญชี", activeNav: null, showFAB: false, showBack: true };
     }
@@ -53,7 +60,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   // FAB click → navigate based on route
   const handleFABClick = () => {
     if (pathname === "/departments") {
-      // Triggered by DepartmentsView via window event
       window.dispatchEvent(new CustomEvent("ypadmin-fab", { detail: "departments" }));
     } else if (pathname === "/users") {
       window.dispatchEvent(new CustomEvent("ypadmin-fab", { detail: "users" }));
@@ -62,6 +68,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ── Loading state ──
   if (loading) {
     return (
       <div
@@ -100,8 +107,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // ── No user → redirecting (render nothing, middleware/client-effect handles it) ──
   if (!user) {
-    // AuthProvider will redirect, render nothing in the meantime
     return null;
   }
 

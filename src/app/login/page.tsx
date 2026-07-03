@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { loginStudent, loginOther, getCurrentSessionUser } from "@/lib/auth/login";
 import { useToast } from "@/components/framework/toast-provider";
@@ -9,11 +9,22 @@ import { IdCardIcon, UserIcon, MailIcon } from "@/lib/icons";
 
 type LoginMode = "student" | "other";
 
-export default function LoginPage() {
+/**
+ * Inner component so we can use useSearchParams inside Suspense boundary.
+ */
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [mode, setMode] = useState<LoginMode>("student");
   const [loading, setLoading] = useState(false);
+
+  // Where to redirect after successful login (set by middleware)
+  const redirectPath = searchParams.get("redirect") || "/dashboard";
+
+  const navigateAfterLogin = () => {
+    router.replace(redirectPath);
+  };
 
   const [nationalId, setNationalId] = useState("");
   const [studentCode, setStudentCode] = useState("");
@@ -31,13 +42,14 @@ export default function LoginPage() {
       const supabase = getBrowserClient();
       const user = await getCurrentSessionUser(supabase);
       if (mounted && user) {
-        router.replace("/dashboard");
+        // Already logged in → go to intended destination or dashboard
+        router.replace(redirectPath);
       }
     })();
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, [router, redirectPath]);
 
   const handleNidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "").slice(0, 13);
@@ -74,7 +86,7 @@ export default function LoginPage() {
       return;
     }
     toast(`สวัสดี ${result.user?.name}`, "success");
-    setTimeout(() => router.replace("/dashboard"), 400);
+    setTimeout(() => navigateAfterLogin(), 400);
   };
 
   const handleOtherSubmit = async (e: React.FormEvent) => {
@@ -100,7 +112,7 @@ export default function LoginPage() {
       return;
     }
     toast(`สวัสดี ${result.user?.name}`, "success");
-    setTimeout(() => router.replace("/dashboard"), 400);
+    setTimeout(() => navigateAfterLogin(), 400);
   };
 
   return (
@@ -292,9 +304,36 @@ export default function LoginPage() {
         </div>
 
         <div className="login__footer">
-          © 2026 YP Admin · เฉพาะผู้ดูแลระบบเท่านั้น · เชื่อมต่อกับ Supabase
+          © 2026 YP Admin v1.1 · เฉพาะผู้ดูแลระบบเท่านั้น · เชื่อมต่อกับ Supabase
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "grid",
+            placeItems: "center",
+            background: "var(--yp-gradient-hero, linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%))",
+            color: "white",
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>YP Admin</div>
+            <div style={{ fontSize: 14, opacity: 0.78, marginTop: 4 }}>
+              กำลังโหลด…
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LoginPageInner />
+    </Suspense>
   );
 }

@@ -7,6 +7,9 @@ import type { Database } from "@/lib/types/database";
  * Refresh Supabase auth session on every request.
  * Call this from middleware.ts to keep cookies fresh.
  *
+ * Returns the authenticated user (or null) so middleware can
+ * enforce route protection server-side.
+ *
  * If env vars are missing (e.g., during local preview without setup),
  * this gracefully skips the session refresh instead of crashing.
  */
@@ -20,7 +23,7 @@ export async function updateSession(request: NextRequest) {
 
   // Graceful skip if env vars aren't configured
   if (!supabaseUrl || !supabaseKey) {
-    return { response, supabase: null };
+    return { response, supabase: null, user: null };
   }
 
   const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
@@ -42,12 +45,15 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // IMPORTANT: getUser() must be called to refresh the session token
+  // IMPORTANT: getUser() must be called to refresh the session token.
+  // We also capture the result so middleware can enforce auth.
+  let user: { id: string } | null = null;
   try {
-    await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
   } catch (e) {
-    // Ignore auth errors in middleware — pages will handle auth state
+    // Ignore auth errors — user stays null, redirect will happen
   }
 
-  return { supabase, response };
+  return { supabase, response, user };
 }
