@@ -220,7 +220,11 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
             name={user.full_name}
             meta={
               <>
-                <span>{user.student_id || user.email || "—"}</span>
+                <span>
+                  {user.account_type === "student"
+                    ? (user.student_id || "—")
+                    : (user.email || user.student_id || "—")}
+                </span>
                 <span>·</span>
                 <span>{getRoleLabel(user)}</span>
               </>
@@ -849,7 +853,11 @@ function UserActionSheetBody({ user, onAction }: UserActionSheetBodyProps) {
           </div>
           <div className="admin-action-sheet__chips">
             {statusChip}
-            <Chip>{user.student_id || user.email || "—"}</Chip>
+            <Chip>
+              {user.account_type === "student"
+                ? (user.student_id || "—")
+                : (user.email || user.student_id || "—")}
+            </Chip>
           </div>
         </div>
       </div>

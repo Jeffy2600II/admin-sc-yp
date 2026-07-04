@@ -213,7 +213,11 @@ export function UsersView() {
                 }
                 subtitle={
                   <>
-                    <span>{u.student_id || u.email || "—"}</span>
+                    <span>
+                      {u.account_type === "student"
+                        ? (u.student_id || "—")
+                        : (u.email || u.student_id || "—")}
+                    </span>
                     <span>·</span>
                     <span>{dept ? dept.name : "ไม่มีฝ่าย"}</span>
                   </>

@@ -1,4 +1,4 @@
-# YP Admin v1.9.1
+# YP Admin v1.9.3
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -163,6 +163,55 @@ INSERT INTO public.council_users (
 - **Mobile-first responsive** (iPhone 14 → desktop)
 - **PWA-ready** (manifest + icons)
 - **Sky Blue + Cyan accent** บนพื้นขาวสะอาด
+
+---
+
+## การปรับปรุงใน v1.9.3 (Critical Fix — ลบ user_metadata ออกจาก Auth)
+
+### Bug Fixes (Critical — แก้ไข "login ไม่ได้" เพราะ display name)
+- **ระบบใหม่สร้าง `user_metadata` (display name) ใน Supabase Auth** — ปัญหา: บัญชีที่สร้างด้วยระบบ admin เก่าไม่มี `user_metadata` แต่ระบบใหม่เพิ่ม `user_metadata: { full_name, student_id, account_type }` ทำให้ข้อมูลไม่ตรงกัน → login ไม่ได้
+- **แก้ไข**: ลบ `user_metadata` ออกจากทุกการเรียก `createUser` และ `updateUserById`:
+  - `approveRequest` (requests.ts) — 2 จุด (createUser + updateUserById)
+  - `createUser API` (users/route.ts) — 2 จุด (createUser + updateUserById)
+- ตอนนี้บัญชีใหม่ที่สร้างจะไม่มี display name เหมือนบัญชีเก่าทุกประการ
+
+### สาเหตุที่แท้จริง (ยืนยันจากผู้ใช้)
+- บัญชีเก่า (สร้างด้วยระบบ admin เดิม) ไม่มี `user_metadata` ใน auth.users
+- บัญชีใหม่ (สร้างด้วยระบบ v1.9.2) มี `user_metadata` → ข้อมูลไม่ตรงกัน → login ล้มเหลว
+- ypwork (ระบบที่ใช้งานจริง) ไม่ได้ตั้ง `user_metadata` เลย — ยืนยันว่านี่คือสาเหตุ
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ไม่มี `user_metadata` ใน createUser/updateUserById ทั้ง 4 จุด
+- บัญชีใหม่จะเหมือนบัญชีเก่าทุกประการ (ไม่มี display name)
+
+---
+
+## การปรับปรุงใน v1.9.2 (Auth Account Reuse + UI Fix)
+
+### Bug Fixes (Critical — แก้ไข "A user with this email address has already been registered")
+- **Auth account ซ้ำ** — ปัญหา: เมื่ออนุมัติคำขอหรือสร้างบัญชีนักเรียน ถ้า synthesized email (`student_<code>@yplabs.internal`) มีอยู่แล้วใน auth.users (เช่น เคยอนุมัติแล้วลบ council_users แต่ auth account ยังเหลือ) → `createUser` ล้มเหลวด้วย "already registered"
+- **แก้ไข (recovery flow)**:
+  1. ลอง `createUser` ก่อน
+  2. ถ้า error มี "already registered" → ค้นหา auth user ที่มีอยู่ด้วย `listUsers()` + filter ตาม email
+  3. ตรวจสอบว่า auth user นั้นมี council_users row หรือไม่:
+     - ถ้ามี → แจ้ง error ชัดเจน: "บัญชีนี้ถูกสร้างไปแล้วสำหรับ X"
+     - ถ้าไม่มี (orphaned auth) → ใช้ `updateUserById` เพื่อ reuse: อัปเดต password + metadata
+  4. ใช้ `finalAuthUid` (จากใหม่หรือ reuse) ในการ insert council_users
+- **Cleanup**: ถ้า insert council_users ล้มเหลว จะลบ auth account เฉพาะที่สร้างใหม่ (ไม่ลบของ reuse)
+
+### UI Fix (แสดงรหัสนักเรียนแทน email สำหรับบัญชีนักเรียน)
+- **ปัญหา**: UI แสดง `student_id || email` ทำให้นักเรียนที่ student_id ว่าง แสดง email ซึ่งผิด
+- **แก้ไข**: ตรวจ `account_type === "student"` ก่อน:
+  - นักเรียน → แสดง `student_id` (ไม่แสดง email)
+  - ครู/อื่นๆ → แสดง `email` (fallback student_id)
+- **แก้ใน**: users-view, user-detail-view (2 จุด), department-detail-view
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- อนุมัติคำขอซ้ำ → ใช้ auth account เดิมแทนการล้มเหลว
+- สร้างบัญชีนักเรียนซ้ำ → แจ้ง error ชัดเจน ไม่ใช่ "already registered"
+- UI แสดงรหัสนักเรียนสำหรับบัญชีนักเรียน (ไม่แสดง email)
 
 ---
 
@@ -540,4 +589,4 @@ confirmDestructive(opts) → Promise<boolean>
 
 ---
 
-© 2026 YP Admin · v1.9.1
+© 2026 YP Admin · v1.9.3

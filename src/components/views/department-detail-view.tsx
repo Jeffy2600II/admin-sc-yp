@@ -368,7 +368,11 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
                 }
                 subtitle={
                   <>
-                    <span>{u.student_id || u.email || "—"}</span>
+                    <span>
+                      {u.account_type === "student"
+                        ? (u.student_id || "—")
+                        : (u.email || u.student_id || "—")}
+                    </span>
                     <span>·</span>
                     <span>
                       {roleLabel(u.role, u.account_type)}

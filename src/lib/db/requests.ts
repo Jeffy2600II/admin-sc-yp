@@ -107,6 +107,17 @@ export async function approveRequest(
   }
 
   // 3. Create Supabase Auth user (adminClient — bypasses RLS)
+  //
+  // v1.9.2: If the synthesized email already exists in auth.users (e.g.,
+  // the student was previously approved then deleted from council_users
+  // but the auth account remained), createUser will fail with
+  // "A user with this email address has already been registered".
+  // We now:
+  //   1. Try createUser first
+  //   2. If it fails with "already registered", look up the existing auth
+  //      user by email and reuse their auth_uid
+  //   3. If the existing user's council_users row still exists, abort with
+  //      a clear error message
   const {
     data: authUser,
     error: authError,
@@ -114,36 +125,94 @@ export async function approveRequest(
     email,
     password,
     email_confirm: true,
-    user_metadata: {
-      full_name: req.full_name,
-      student_id: req.student_id || "",
-      account_type: req.account_type,
-    },
+    // v1.9.3: NO user_metadata — old admin system didn't set display name.
+    // Setting it causes login to fail because data doesn't match old accounts.
   });
 
+  let finalAuthUid: string;
+
   if (authError || !authUser.user) {
-    console.error("[approveRequest] Auth createUser error:", authError);
-    return {
-      success: false,
-      error: authError?.message || "ไม่สามารถสร้างบัญชี Auth ได้",
-    };
+    // v1.9.2: Check if the error is "already registered"
+    const errMsg = authError?.message || "";
+    if (errMsg.includes("already been registered") || errMsg.includes("already registered")) {
+      // Look up the existing auth user by email
+      const { data: existingUsers, error: listError } = await adminClient.auth.admin.listUsers();
+      if (listError) {
+        console.error("[approveRequest] listUsers error:", listError);
+        return {
+          success: false,
+          error: `ไม่สามารถสร้างบัญชี Auth ได้: ${errMsg}`,
+        };
+      }
+
+      const existingUser = (existingUsers.users || []).find(
+        (u) => u.email === email
+      );
+
+      if (!existingUser) {
+        console.error("[approveRequest] existing user not found for email:", email);
+        return {
+          success: false,
+          error: `ไม่สามารถสร้างบัญชี Auth ได้: ${errMsg}`,
+        };
+      }
+
+      // Check if the existing auth user already has a council_users row
+      const { data: existingCouncilUser } = await adminClient
+        .from("council_users")
+        .select("id, full_name")
+        .eq("auth_uid", existingUser.id)
+        .maybeSingle();
+
+      if (existingCouncilUser) {
+        // The auth account is already linked to a council_users row — abort
+        return {
+          success: false,
+          error: `บัญชีนี้ถูกสร้างไปแล้วสำหรับ "${existingCouncilUser.full_name}" — ไม่สามารถอนุมัติคำขอซ้ำได้`,
+        };
+      }
+
+      // The auth account exists but has no council_users row (orphaned).
+      // Reuse it — update password and metadata to match the new request.
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(
+        existingUser.id,
+        {
+          password,
+          email_confirm: true,
+          // v1.9.3: NO user_metadata — match old admin system behavior
+        }
+      );
+
+      if (updateError) {
+        console.error("[approveRequest] updateUserById error:", updateError);
+        return {
+          success: false,
+          error: `ไม่สามารถอัปเดตบัญชี Auth ที่มีอยู่ได้: ${updateError.message}`,
+        };
+      }
+
+      finalAuthUid = existingUser.id;
+    } else {
+      // Different auth error — abort
+      console.error("[approveRequest] Auth createUser error:", authError);
+      return {
+        success: false,
+        error: `ไม่สามารถสร้างบัญชี Auth ได้: ${errMsg}`,
+      };
+    }
+  } else {
+    finalAuthUid = authUser.user.id;
   }
 
   // 4. Insert council_users row (adminClient — bypasses RLS)
   //
   // v1.7: `color` is NOT a column on council_users (confirmed by schema_sc.md).
-  // The previous version included `color: "#0EA5E9"` in the INSERT, which
-  // caused "Could not find the 'color' column" errors. Now we omit it.
-  // User avatar color is derived from their department at render time.
-  //
   // v1.9.1: For student accounts, do NOT insert `email` into council_users.
-  // The student login flow uses synthesized email (student_<code>@yplabs.internal)
-  // and if council_users.email contains a different email, login breaks.
-  // Only insert email for teacher/other accounts (which login with real email).
+  // v1.9.2: Use finalAuthUid (which may be from a reused auth account).
   //
   // filterPayload() also drops any other keys that don't exist as columns.
   const insertPayload = filterPayload("council_users", {
-    auth_uid: authUser.user.id,
+    auth_uid: finalAuthUid,
     full_name: req.full_name,
     student_id: req.student_id || "",
     email: req.account_type === "student" ? "" : (req.email || email),
@@ -163,14 +232,17 @@ export async function approveRequest(
 
   if (insertError) {
     console.error("[approveRequest] council_users insert error:", insertError);
-    // Attempt to clean up the auth user we just created
-    try {
-      await adminClient.auth.admin.deleteUser(authUser.user.id);
-    } catch (cleanupErr) {
-      console.error(
-        "[approveRequest] failed to clean up auth user after insert failure:",
-        cleanupErr
-      );
+    // v1.9.2: Only delete the auth user if we created it new (not reused).
+    // If we reused an existing auth account, deleting it would break things.
+    if (authUser.user) {
+      try {
+        await adminClient.auth.admin.deleteUser(authUser.user.id);
+      } catch (cleanupErr) {
+        console.error(
+          "[approveRequest] failed to clean up auth user after insert failure:",
+          cleanupErr
+        );
+      }
     }
     return {
       success: false,
