@@ -1,15 +1,24 @@
 "use client";
 
 /**
- * Danger Zone safety system (port from ypadmin-demo-v1.5 danger-confirm.js)
+ * YP ADMIN · DANGER CONFIRM (v1.9 — complete rewrite)
  *
- * 2-step destructive confirmation:
- *  Step 1: Warning + Acknowledge button → step 2 (if requireText)
- *  Step 2: Type-to-confirm input + Final action button (disabled until typed correctly)
+ * 2-step destructive confirmation using a SINGLE bottom sheet with React
+ * state for step transitions. This fixes the v1.8 bug where the "confirm"
+ * button did nothing because `controller.close()` was called on the wrong
+ * controller (step 1's controller, which was already closed when step 2
+ * opened).
  *
- * 1-step confirmDangerousAction for less severe actions (reject request, disable user).
+ * v1.9 design:
+ * - Single sheet with `step` state ("warning" | "confirm")
+ * - Step 1: warning + "ดำเนินการต่อ" button → setStep("confirm")
+ * - Step 2: type-to-confirm input + "ลบถาวร" button (disabled until match)
+ * - Cancel/close at any step → resolve(false)
+ * - Confirm at step 2 → resolve(true) + close sheet
+ *
+ * `confirmDangerousAction` (1-step) is kept for less severe actions.
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useBottomSheet } from "./bottom-sheet";
 import {
   AlertIcon,
@@ -34,45 +43,27 @@ export interface ConfirmDestructiveOptions {
 export function useDangerConfirm() {
   const { open } = useBottomSheet();
 
-  const confirmDestructive = React.useCallback(
+  const confirmDestructive = useCallback(
     (opts: ConfirmDestructiveOptions): Promise<boolean> => {
       return new Promise((resolve) => {
         let resolved = false;
+
         const done = (val: boolean) => {
           if (resolved) return;
           resolved = true;
-          controller.close();
+          // Close the sheet (without skipHistory so browser back is synced)
+          try {
+            controller.close();
+          } catch (e) {
+            // ignore — sheet may already be closing
+          }
           resolve(val);
         };
 
+        // v1.9: Single sheet with internal step state.
+        // DangerZoneContent manages its own step transitions via React state.
         const body = (
-          <DangerZoneStep1
-            opts={opts}
-            onAcknowledge={() => {
-              if (!opts.requireText) {
-                done(true);
-                return;
-              }
-              // Render step 2 — but since we use a static body, we need to
-              // re-open. Simpler: render step 2 inside the same body via state.
-              // The current implementation uses uncontrolled state in Step1Body.
-              // We patch the sheet body by replacing controller.patch — but our
-              // BottomSheet doesn't expose patch reliably. So we re-render via
-              // a key change.
-              controller.close({ skipHistory: true });
-              const step2Controller = open({
-                title: "⚠️ โซนอันตราย",
-                body: (
-                  <DangerZoneStep2 opts={opts} onConfirm={() => done(true)} />
-                ),
-                footer: null,
-                dismissable: true,
-                onClose: () => done(false),
-              });
-              // Track step2Controller for cancellation
-              void step2Controller;
-            }}
-          />
+          <DangerZoneContent opts={opts} onConfirm={() => done(true)} onCancel={() => done(false)} />
         );
 
         const controller = open({
@@ -87,7 +78,7 @@ export function useDangerConfirm() {
     [open]
   );
 
-  const confirmDangerousAction = React.useCallback(
+  const confirmDangerousAction = useCallback(
     (opts: {
       title?: string;
       message?: string;
@@ -100,7 +91,11 @@ export function useDangerConfirm() {
         const done = (val: boolean) => {
           if (resolved) return;
           resolved = true;
-          controller.close();
+          try {
+            controller.close();
+          } catch (e) {
+            // ignore
+          }
           resolve(val);
         };
 
@@ -111,7 +106,9 @@ export function useDangerConfirm() {
                 <AlertIcon size={24} />
               </div>
               <div className="danger-zone__hero-body">
-                <div className="danger-zone__hero-title">{opts.title || "ยืนยันการดำเนินการ"}</div>
+                <div className="danger-zone__hero-title">
+                  {opts.title || "ยืนยันการดำเนินการ"}
+                </div>
                 {opts.message && (
                   <div className="danger-zone__hero-msg">{opts.message}</div>
                 )}
@@ -127,31 +124,28 @@ export function useDangerConfirm() {
                 </ul>
               </div>
             )}
-          </div>
-        );
-
-        const footer = (
-          <div className="danger-zone__footer">
-            <button
-              className="btn btn--ghost btn--block"
-              onClick={() => done(false)}
-            >
-              ยกเลิก
-            </button>
-            <button
-              className="btn btn--danger-outline btn--block"
-              onClick={() => done(true)}
-            >
-              {opts.finalActionIcon || <AlertIcon size={16} />}
-              <span>{opts.confirmText || "ยืนยัน"}</span>
-            </button>
+            <div className="danger-zone__footer">
+              <button
+                className="btn btn--ghost btn--block"
+                onClick={() => done(false)}
+              >
+                ยกเลิก
+              </button>
+              <button
+                className="btn btn--danger-outline btn--block"
+                onClick={() => done(true)}
+              >
+                {opts.finalActionIcon || <AlertIcon size={16} />}
+                <span>{opts.confirmText || "ยืนยัน"}</span>
+              </button>
+            </div>
           </div>
         );
 
         const controller = open({
           title: "ยืนยันการดำเนินการ",
           body,
-          footer,
+          footer: null,
           dismissable: true,
           onClose: () => done(false),
         });
@@ -163,14 +157,104 @@ export function useDangerConfirm() {
   return { confirmDestructive, confirmDangerousAction };
 }
 
-/* ── Step 1 body ── */
-function DangerZoneStep1({
+/**
+ * v1.9: Single-component danger zone content with internal step state.
+ *
+ * Step "warning": shows impact + "ดำเนินการต่อ" button (or "ยืนยัน" if no requireText)
+ * Step "confirm": shows type-to-confirm input + final action button
+ *
+ * Both steps have a Cancel button that calls onCancel.
+ */
+function DangerZoneContent({
   opts,
-  onAcknowledge,
+  onConfirm,
+  onCancel,
 }: {
   opts: ConfirmDestructiveOptions;
-  onAcknowledge: () => void;
+  onConfirm: () => void;
+  onCancel: () => void;
 }) {
+  // v1.9: if no requireText, skip straight to "confirm" (which just shows the button)
+  const [step, setStep] = useState<"warning" | "confirm">(
+    opts.requireText ? "warning" : "confirm"
+  );
+
+  if (step === "warning") {
+    return (
+      <div className="danger-zone">
+        <div className="danger-zone__hero">
+          <div className="danger-zone__hero-icon">
+            <AlertIcon size={24} />
+          </div>
+          <div className="danger-zone__hero-body">
+            <div className="danger-zone__hero-title">
+              {opts.title || "การกระทำนี้ไม่สามารถย้อนกลับได้"}
+            </div>
+            {opts.message && (
+              <div className="danger-zone__hero-msg">{opts.message}</div>
+            )}
+          </div>
+        </div>
+
+        {opts.impact && opts.impact.length > 0 && (
+          <div className="danger-zone__impact">
+            <div className="danger-zone__impact-label">ผลกระทบที่จะเกิดขึ้น</div>
+            <ul className="danger-zone__impact-list">
+              {opts.impact.map((i, idx) => (
+                <li key={idx}>{i}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {opts.entityName && (
+          <div className="danger-zone__entity">
+            <span className="danger-zone__entity-label">เป้าหมาย:</span>
+            <span className="danger-zone__entity-name">{opts.entityName}</span>
+          </div>
+        )}
+
+        <div className="danger-zone__hint">
+          <InfoIcon size={16} />
+          <span>
+            โปรดตรวจสอบให้แน่ใจก่อนดำเนินการ — การกระทำนี้
+            <strong>ย้อนกลับไม่ได้</strong>
+          </span>
+        </div>
+
+        <div className="danger-zone__footer">
+          <button
+            className="btn btn--ghost btn--block"
+            onClick={onCancel}
+          >
+            ยกเลิก
+          </button>
+          <button
+            className="btn btn--danger-outline btn--block"
+            onClick={() => setStep("confirm")}
+          >
+            <AlertIcon size={16} />
+            <span>{opts.confirmText || "ดำเนินการต่อ"}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Step "confirm"
+  // If requireText is set, show the type-to-confirm input.
+  // If not, show just the final action button (1-step confirm).
+  if (opts.requireText) {
+    return (
+      <DangerZoneTypeConfirm
+        opts={opts}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  // No requireText — just show the final action button
   return (
     <div className="danger-zone">
       <div className="danger-zone__hero">
@@ -179,7 +263,7 @@ function DangerZoneStep1({
         </div>
         <div className="danger-zone__hero-body">
           <div className="danger-zone__hero-title">
-            {opts.title || "การกระทำนี้ไม่สามารถย้อนกลับได้"}
+            {opts.title || "ยืนยันการดำเนินการ"}
           </div>
           {opts.message && (
             <div className="danger-zone__hero-msg">{opts.message}</div>
@@ -198,82 +282,37 @@ function DangerZoneStep1({
         </div>
       )}
 
-      {opts.entityName && (
-        <div className="danger-zone__entity">
-          <span className="danger-zone__entity-label">เป้าหมาย:</span>
-          <span className="danger-zone__entity-name">{opts.entityName}</span>
-        </div>
-      )}
-
-      <div className="danger-zone__hint">
-        <InfoIcon size={16} />
-        <span>
-          โปรดตรวจสอบให้แน่ใจก่อนดำเนินการ — การกระทำนี้
-          <strong>ย้อนกลับไม่ได้</strong>
-        </span>
-      </div>
-
       <div className="danger-zone__footer">
-        <AcknowledgeFooter
-          confirmText={opts.confirmText || "ดำเนินการต่อ"}
-          onAcknowledge={onAcknowledge}
-        />
+        <button
+          className="btn btn--ghost btn--block"
+          onClick={onCancel}
+        >
+          ยกเลิก
+        </button>
+        <button
+          className="btn btn--danger btn--block"
+          onClick={onConfirm}
+        >
+          {opts.finalActionIcon || <AlertIcon size={16} />}
+          <span>{opts.finalAction || "ยืนยันการดำเนินการ"}</span>
+        </button>
       </div>
     </div>
   );
 }
 
-function AcknowledgeFooter({
-  confirmText,
-  onAcknowledge,
-}: {
-  confirmText: string;
-  onAcknowledge: () => void;
-}) {
-  const { open } = useBottomSheet();
-  // The footer is rendered inside the body here because our BottomSheet
-  // puts footer in a separate slot. To keep semantics, we render the
-  // buttons inline and call onAcknowledge.
-  return (
-    <>
-      <style>{`
-        .danger-zone__footer {
-          display: flex;
-          gap: 10px;
-          margin-top: 20px;
-        }
-      `}</style>
-      <button
-        className="btn btn--ghost btn--block"
-        onClick={() => {
-          // Close current sheet — caller will resolve false via onClose
-          // We need to close the controller. Since we don't have direct access,
-          // dispatch Escape — BottomSheet history manager will close top sheet.
-          document.dispatchEvent(
-            new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
-          );
-        }}
-      >
-        ยกเลิก
-      </button>
-      <button
-        className="btn btn--danger-outline btn--block"
-        onClick={onAcknowledge}
-      >
-        <AlertIcon size={16} />
-        <span>{confirmText}</span>
-      </button>
-    </>
-  );
-}
-
-/* ── Step 2 body (type-to-confirm) ── */
-function DangerZoneStep2({
+/**
+ * Step 2: type-to-confirm input + final action button.
+ * v1.9: Cancel button calls onCancel directly (no more dispatchEvent hack).
+ */
+function DangerZoneTypeConfirm({
   opts,
   onConfirm,
+  onCancel,
 }: {
   opts: ConfirmDestructiveOptions;
   onConfirm: () => void;
+  onCancel: () => void;
 }) {
   const [value, setValue] = useState("");
   const matches =
@@ -281,8 +320,18 @@ function DangerZoneStep2({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 280);
+    // Focus the input after the sheet open animation
+    const t = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => clearTimeout(t);
   }, []);
+
+  // v1.9: Enter key submits when matches
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && matches) {
+      e.preventDefault();
+      onConfirm();
+    }
+  };
 
   return (
     <div className="danger-zone">
@@ -311,6 +360,7 @@ function DangerZoneStep2({
             placeholder="พิมพ์ชื่อยืนยัน…"
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <div
             className={`danger-zone__type-status ${
@@ -333,11 +383,7 @@ function DangerZoneStep2({
       <div className="danger-zone__footer">
         <button
           className="btn btn--ghost btn--block"
-          onClick={() =>
-            document.dispatchEvent(
-              new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
-            )
-          }
+          onClick={onCancel}
         >
           ยกเลิก
         </button>

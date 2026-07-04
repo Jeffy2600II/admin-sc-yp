@@ -1,4 +1,4 @@
-# YP Admin v1.8
+# YP Admin v1.9
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -163,6 +163,42 @@ INSERT INTO public.council_users (
 - **Mobile-first responsive** (iPhone 14 → desktop)
 - **PWA-ready** (manifest + icons)
 - **Sky Blue + Cyan accent** บนพื้นขาวสะอาด
+
+---
+
+## การปรับปรุงใน v1.9 (Critical Fix — Danger Confirm ไม่ทำงาน)
+
+### Bug Fixes (Critical — แก้ไข "กดยืนยันแล้วไม่มีอะไรเกิดขึ้น")
+- **`confirmDestructive` ใช้ close+reopen pattern ที่ผิดพลาด** — ปัญหาหลักของ v1.8: เมื่อผู้ใช้พิมพ์ชื่อยืนยันใน step 2 แล้วกดปุ่ม "ลบบัญชีถาวร" ปุ่มเรียก `done(true)` ซึ่งเรียก `controller.close()` — **แต่ `controller` คือของ step 1 ที่ปิดไปแล้ว!** step 2 ใช้ `step2Controller` ซึ่งไม่ได้ถูกปิด → sheet ค้างอยู่ → promise resolve แล้วแต่ sheet ยังบัง → toast อยู่หลัง sheet → ดูเหมือนว่า "ไม่มีอะไรเกิดขึ้น"
+- **ปุ่ม "ยกเลิก" ใช้ `document.dispatchEvent(KeyboardEvent Escape)` ที่ไม่น่าเชื่อถือ** — ถ้า ESC handler ไม่ทำงาน ปุ่มจะไม่ทำอะไรเลย
+
+**แก้ไข (v1.9 — complete rewrite)**:
+- **Single-sheet state machine**: ใช้ bottom sheet เดียวพร้อม React state สำหรับ step transition (`"warning" | "confirm"`) แทนการ close+reopen
+- `DangerZoneContent` component จัดการ step ภายในด้วย `useState` — step 1 กด "ดำเนินการต่อ" → `setStep("confirm")` → re-render เป็น step 2 (ไม่ปิด sheet)
+- ปุ่ม Cancel ทุก step เรียก `onCancel` callback โดยตรง (ไม่ใช้ dispatchEvent hack)
+- ปุ่ม Confirm ใน step 2 เรียก `onConfirm` callback โดยตรง → `done(true)` → ปิด sheet ที่ถูกต้อง → resolve promise
+- เพิ่ม Enter key support: ถ้าพิมพ์ถูกแล้วกด Enter → ยืนยันได้เลย
+
+### Architecture (v1.9)
+```
+confirmDestructive(opts) → Promise<boolean>
+  └─ open sheet with DangerZoneContent
+       └─ useState step = "warning" | "confirm"
+            ├─ step "warning": แสดง impact + "ดำเนินการต่อ" → setStep("confirm")
+            └─ step "confirm":
+                 ├─ ถ้ามี requireText → DangerZoneTypeConfirm (input + ปุ่ม)
+                 └─ ถ้าไม่มี requireText → ปุ่มยืนยันเดียว
+       └─ onConfirm → done(true) → close sheet → resolve(true)
+       └─ onCancel → done(false) → close sheet → resolve(false)
+       └─ onClose (backdrop/ESC) → done(false) → resolve(false)
+```
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ปุ่มยืนยันใน step 2 ทำงานได้ (เรียก onConfirm โดยตรง ไม่ผ่าน controller ผิด)
+- ปุ่มยกเลิกทุก step ทำงานได้ (เรียก onCancel โดยตรง ไม่ใช้ dispatchEvent)
+- Enter key ใน input ยืนยันได้เมื่อพิมพ์ถูก
+- Sheet ปิดถูกต้องเสมอ (ใช้ controller ตัวเดียวตลอดทั้ง flow)
 
 ---
 
@@ -489,4 +525,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.8
+© 2026 YP Admin · v1.9
