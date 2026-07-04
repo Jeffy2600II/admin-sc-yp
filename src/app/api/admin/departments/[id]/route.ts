@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/api-guard";
+import { filterPayload } from "@/lib/db/schema-detect";
 
 /**
  * PATCH /api/admin/departments/[id]
- * Body: partial department patch (name, description, icon, color, headUserAuthUid)
+ * Body: partial department patch (name, description, icon, color)
+ *
+ * v1.5: Removed `headUserAuthUid` — that column doesn't exist in the
+ * real ypwork departments schema.
  */
 export async function PATCH(
   request: NextRequest,
@@ -41,8 +45,7 @@ export async function PATCH(
   if (body.description !== undefined) payload.description = body.description;
   if (body.icon !== undefined) payload.icon = body.icon;
   if (body.color !== undefined) payload.color = body.color;
-  if (body.headUserAuthUid !== undefined)
-    payload.head_user_auth_uid = body.headUserAuthUid;
+  // v1.5: head_user_auth_uid does NOT exist in the real schema — removed
 
   if (Object.keys(payload).length === 0) {
     return NextResponse.json(
@@ -52,9 +55,11 @@ export async function PATCH(
   }
 
   try {
+    // v1.5: filter payload to only include columns that exist in the DB
+    const safePayload = filterPayload("departments", payload);
     const { error } = await guard.adminClient
       .from("departments")
-      .update(payload)
+      .update(safePayload)
       .eq("id", id);
 
     if (error) {

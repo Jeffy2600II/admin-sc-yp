@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/api-guard";
 import { synthesizeStudentEmail } from "@/lib/utils/format";
+import { filterPayload } from "@/lib/db/schema-detect";
 
 /**
  * POST /api/admin/users
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
     departmentId,
     color,
     role,
+    avatarUrl, // v1.6: real column
   } = body;
 
   if (!fullName || typeof fullName !== "string") {
@@ -59,12 +61,21 @@ export async function POST(request: NextRequest) {
     let authEmail: string;
     let authPassword: string;
 
+    // v1.6: accept an explicit password from the request body (admin-set).
+    // Fall back to legacy patterns if not provided.
+    const bodyPassword: string | undefined = body.password;
+
     if (acctType === "student" && studentId) {
       authEmail = synthesizeStudentEmail(studentId);
-      authPassword = studentId;
+      authPassword = bodyPassword || studentId;
     } else {
       authEmail = email || `${fullName.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
-      authPassword = "123456";
+      authPassword = bodyPassword || "123456";
+    }
+
+    // Guard: password must be at least 6 chars (Supabase Auth minimum)
+    if (authPassword.length < 6) {
+      authPassword = authPassword.padEnd(6, "0");
     }
 
     // 1. Create Supabase Auth user
@@ -94,22 +105,27 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insert council_users row
+    // v1.5: filter payload to only include columns that exist in the DB
+    // v1.6: include avatar_url (confirmed real column)
+    const insertPayload = filterPayload("council_users", {
+      auth_uid: authUser.user.id,
+      full_name: fullName,
+      student_id: studentId || "",
+      email: email || authEmail,
+      year,
+      role: role || "member",
+      approved: true,
+      disabled: false,
+      account_type: acctType,
+      department_id: departmentId || null,
+      color: color || "#0EA5E9",
+      national_id: nationalId || "",
+      avatar_url: avatarUrl ?? null, // v1.6: real column
+    });
+
     const { error: insertError } = await guard.adminClient
       .from("council_users")
-      .insert({
-        auth_uid: authUser.user.id,
-        full_name: fullName,
-        student_id: studentId || "",
-        email: email || authEmail,
-        year,
-        role: role || "member",
-        approved: true,
-        disabled: false,
-        account_type: acctType,
-        department_id: departmentId || null,
-        color: color || "#0EA5E9",
-        national_id: nationalId || "",
-      });
+      .insert(insertPayload);
 
     if (insertError) {
       console.error("[/api/admin/users] council_users insert:", insertError);

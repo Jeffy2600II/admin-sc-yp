@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Department } from "@/lib/types/database";
+import { filterPayload } from "@/lib/db/schema-detect";
 
 type Client = SupabaseClient<Database>;
 
@@ -34,26 +35,32 @@ interface CreateDepartmentInput {
   description?: string;
   icon?: string;
   color?: string;
-  headUserAuthUid?: string | null;
+  // v1.5: headUserAuthUid removed — column doesn't exist in real schema
 }
 
 /**
  * Create a new department.
+ *
+ * v1.5: Uses filterPayload() to drop any columns that don't exist in the
+ * real database schema. The head_user_auth_uid column was fabricated in
+ * previous versions and never existed in the ypwork schema.
+ *
  * Returns the created Department on success, or null on failure.
  */
 export async function createDepartment(
   supabase: Client,
   input: CreateDepartmentInput,
 ): Promise<Department | null> {
+  const payload = filterPayload("departments", {
+    name: input.name,
+    description: input.description || "",
+    icon: input.icon || "👥",
+    color: input.color || "#0EA5E9",
+  });
+
   const { data, error } = await supabase
     .from("departments")
-    .insert({
-      name: input.name,
-      description: input.description || "",
-      icon: input.icon || "👥",
-      color: input.color || "#0EA5E9",
-      head_user_auth_uid: input.headUserAuthUid ?? null,
-    })
+    .insert(payload)
     .select()
     .single();
 
@@ -69,7 +76,7 @@ interface UpdateDepartmentInput {
   description?: string;
   icon?: string;
   color?: string;
-  headUserAuthUid?: string | null;
+  // v1.5: headUserAuthUid removed — column doesn't exist in real schema
 }
 
 /**
@@ -86,12 +93,13 @@ export async function updateDepartment(
   if (input.description !== undefined) payload.description = input.description;
   if (input.icon !== undefined) payload.icon = input.icon;
   if (input.color !== undefined) payload.color = input.color;
-  if (input.headUserAuthUid !== undefined)
-    payload.head_user_auth_uid = input.headUserAuthUid;
+
+  // v1.5: filter to only existing columns
+  const safePayload = filterPayload("departments", payload);
 
   const { error } = await supabase
     .from("departments")
-    .update(payload)
+    .update(safePayload)
     .eq("id", id);
 
   if (error) {

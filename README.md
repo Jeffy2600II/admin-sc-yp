@@ -1,4 +1,4 @@
-# YP Admin v1.4
+# YP Admin v1.6
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -166,6 +166,116 @@ INSERT INTO public.council_users (
 
 ---
 
+## การปรับปรุงใน v1.6 (Schema-Accurate — อ้างอิง schema_sc.md)
+
+### Bug Fixes & Improvements (อ้างอิง schema จริงจาก schema_sc.md)
+- **`council_users.avatar_url`** — คอลัมน์จริงที่ไม่เคยใช้ใน v1.5 → เพิ่มเข้ามาใน types, API routes, และ Avatar component
+- **`council_join_requests.password`** — คอลัมน์จริงที่เก็บ password ที่ผู้สมัครตั้งเอง → `approveRequest` ใช้ password นี้แทนการใช้ student_id (ยกเว้นถ้า password ว่าง)
+- **`council_join_requests.message`** — คอลัมน์จริงที่เก็บข้อความจากผู้สมัคร → แสดงใน request detail sheet แล้ว (เดิมมีอยู่แต่อ้างอิงผิด)
+- **`council_years.created_at`** — คอลัมน์จริง → เพิ่มใน types
+- **`student_id` UNIQUE** — ยืนยันว่ามี unique constraint ในทั้ง `council_users` และ `council_join_requests`
+
+### Avatar Component (v1.6)
+- เพิ่ม prop `avatarUrl` — ถ้ามี avatar URL จะ render `<image>` ใน SVG (clipped to rounded rect)
+- ถ้าไม่มี avatar URL จะใช้ initials text แบบเดิม
+- รองรับ avatar URL จาก `council_users.avatar_url` ในทุกที่ที่ใช้ Avatar
+
+### Password Handling (v1.6)
+- **`approveRequest`**: ใช้ `req.password` จาก join_requests ก่อน ถ้าว่างค่อย fallback ไป student_id
+- **`createUserApi`**: รับ `password` จาก request body (admin-set) ถ้าไม่มีค่อย fallback
+- **Guard**: ถ้า password สั้นกว่า 6 ตัว จะ pad ด้วย "0" ให้ครบ 6 ตัว (Supabase Auth minimum)
+- ทำให้ผู้ใช้ที่อนุมัติแล้วสามารถ login ด้วย password ที่ตั้งเองได้ ไม่ใช่แค่ student_id
+
+### Schema Detection (v1.6)
+- เพิ่ม `avatar_url`, `password`, `message`, `created_at` ใน fallback cache ของ schema-detect
+- ถ้า information_schema query ล้มเหลว จะใช้ cache ที่มีคอลัมน์ครบถ้วน
+
+### RLS Policies (อ้างอิงจาก schema_sc.md)
+- `council_users`: insert_admin, update_self_or_admin, delete_admin, select_own/authenticated
+- `council_join_requests`: insert anyone, select authenticated/own, delete admin
+- `council_years`: select anyone, modify admin (authenticated)
+- `departments`: select anyone, modify admin
+
+### Schema จริงที่อ้างอิง (verified จาก schema_sc.md)
+
+**`council_users`** (PK: id uuid, UNIQUE: auth_uid, student_id):
+- id, auth_uid, full_name, student_id, email, year, role, approved, disabled, account_type
+- department_id (FK → departments.id), avatar_url, national_id, color, created_at
+- FK: year → council_years.year
+
+**`council_years`** (PK: year integer):
+- year, closed, created_at
+
+**`council_join_requests`** (PK: id uuid, UNIQUE: student_id):
+- id, full_name, student_id, year, email, password, message, account_type, national_id, department_id, created_at
+- FK: department_id → departments.id
+
+**`departments`** (PK: id text):
+- id, name, color, icon, description, created_at, updated_at
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ทุก INSERT/UPDATE ผ่าน `filterPayload()` → ปลอดภัย 100%
+- Avatar component รองรับ avatar URL จริงจาก database
+- Password จาก join_requests ใช้งานได้ (ผู้อนุมัติใช้ password ที่ผู้สมัครตั้งเอง)
+
+---
+
+## การปรับปรุงใน v1.5 (Schema-Accurate — อ้างอิงฐานข้อมูลจริง)
+
+### Bug Fixes (Critical — แก้ไขปัญหา "Could not find the 'X' column")
+- **อ้างอิงคอลัมน์ที่ไม่มีอยู่จริง** — ปัญหาร้ายแรงที่สุดของ v1.4: โค้ดสร้างคอลัมน์ขึ้นมาเองที่ไม่มีในฐานข้อมูลจริง ทำให้ทุกการบันทึกล้มเหลว:
+  - `council_users.color` — ypwork migration เพิ่มคอลัมน์นี้ แต่ฐานข้อมูลผู้ใช้ยังไม่ได้รัน migration → INSERT ล้มเหลว
+  - `departments.head_user_auth_uid` — **คอลัมน์นี้ไม่มีอยู่ใน schema จริงเลย** (เราสร้างขึ้นมาเองใน v1.3) → ทุกการสร้าง/แก้ไขฝ่ายงานล้มเหลว
+  - `council_users.national_id` / `council_join_requests.national_id` — ypwork v1.8.1 เพิ่มคอลัมน์นี้ แต่อาจยังไม่ได้รัน
+- **แก้ไข**: สร้างระบบ **Schema Detection** (`src/lib/db/schema-detect.ts`) ที่ตรวจสอบคอลัมน์จริงจาก `information_schema.columns` ตอนเริ่มต้น แล้วใช้ `filterPayload()` กรองเฉพาะคอลัมน์ที่มีอยู่จริงก่อน INSERT/UPDATE → ไม่มี "Could not find the 'X' column" อีก
+
+### Schema จริงที่อ้างอิง (verified)
+ตรวจสอบจาก `yplabs/supabase/migrations/20260429121736_001_create_all_tables_and_enable_realtime.sql` + `ypwork/supabase/migrations/ypwork_schema.sql` + `ypwork/ypwork-v1.8.1-national-id-and-years-from-db.sql`:
+
+**`council_users`** (yplabs core):
+- `id`, `auth_uid`, `full_name`, `student_id`, `email`, `year`, `role`, `approved`, `disabled`, `account_type`, `created_at`
+- ypwork extensions (อาจมีหรือไม่มี): `department_id`, `color`, `national_id`
+
+**`council_years`** (yplabs core):
+- `year`, `closed`
+
+**`council_join_requests`** (yplabs core):
+- `id`, `full_name`, `student_id`, `year`, `email`, `account_type`, `created_at`
+- ypwork extensions (อาจมีหรือไม่มี): `department_id`, `national_id`
+
+**`departments`** (ypwork):
+- `id`, `name`, `color`, `icon`, `description`, `created_at`, `updated_at`
+- **ไม่มี** `head_user_auth_uid` (คอลัมน์นี้ไม่เคยมีอยู่ใน schema จริง)
+
+### การลบ `head_user_auth_uid` (Fabricated Column)
+- ลบคอลัมน์ `head_user_auth_uid` ออกจาก:
+  - Database types (`src/lib/types/database.ts`)
+  - API routes (`/api/admin/departments` + `/api/admin/departments/[id]`)
+  - API helpers (`src/lib/api/admin.ts`)
+  - DB helpers (`src/lib/db/departments.ts`)
+  - Views (`departments-view.tsx` — ลบ field หัวหน้าฝ่ายออกจาก form สร้าง)
+  - Views (`department-detail-view.tsx` — ลบ field หัวหน้าฝ่ายออกจาก form แก้ไข, ลบ stat "หัวหน้า", ลบ chip "หัวหน้า" จาก member list)
+
+### Schema Detection System (`src/lib/db/schema-detect.ts`)
+- `detectSchemaColumns(adminClient)` — query `information_schema.columns` ครั้งเดียวตอนเริ่มต้น (cached)
+- `filterPayload(table, payload)` — กรอง payload ให้เหลือเฉพาะคอลัมน์ที่มีอยู่จริง
+- `hasColumn(table, column)` — ตรวจสอบว่าคอลัมน์มีอยู่หรือไม่
+- ทุก API route ใช้ `filterPayload()` ก่อน INSERT/UPDATE → ปลอดภัย 100%
+
+### Fallback สำหรับ Avatar Color
+- `council_users.color` อาจไม่มี → Avatar component รองรับ `color=undefined` (ใช้ brand gradient)
+- Views ที่ใช้ `u.color` ส่ง `u.color || undefined` เพื่อให้ Avatar ใช้ fallback
+- `user-detail-view.tsx` ใช้ `user.color || dept?.color || "#0EA5E9"` สำหรับ hero gradient
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ไม่มีการอ้างอิงคอลัมน์ `head_user_auth_uid` ในโค้ด (เหลือเฉพาะใน comments เพื่อ documentation)
+- ทุก INSERT/UPDATE ผ่าน `filterPayload()` → ไม่มี "Could not find the 'X' column" errors
+- ไม่ต้องแก้ไขฐานข้อมูล — โค้ดปรับตัวเองตาม schema ที่มีอยู่จริง
+
+---
+
 ## การปรับปรุงใน v1.4 (Critical Data Save Fix + Sheet Stability)
 
 ### Bug Fixes (Critical — แก้ไขปัญหา "บันทึกข้อมูลไม่ได้")
@@ -290,4 +400,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.4
+© 2026 YP Admin · v1.6

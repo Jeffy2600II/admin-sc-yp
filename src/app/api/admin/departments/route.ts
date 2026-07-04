@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/api-guard";
+import { filterPayload } from "@/lib/db/schema-detect";
 
 /**
  * POST /api/admin/departments
- * Body: { name, description?, icon?, color?, headUserAuthUid? }
+ * Body: { name, description?, icon?, color? }
  *
- * Creates a new department. Uses service-role client for consistency with
- * other admin write routes (departments RLS actually allows authenticated
- * writes, but we use the service role here so all admin writes go through
- * the same auth-guarded path).
+ * v1.5: Removed `headUserAuthUid` — the `head_user_auth_uid` column
+ * does NOT exist in the real ypwork departments schema. The previous
+ * version fabricated this column and every department creation failed
+ * with "Could not find the 'head_user_auth_uid' column".
+ *
+ * Real departments schema (ypwork_schema.sql):
+ *   id, name, color, icon, description, created_at, updated_at
  */
 export async function POST(request: NextRequest) {
   let body: any;
@@ -21,7 +25,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, description, icon, color, headUserAuthUid } = body;
+  const { name, description, icon, color } = body;
 
   if (!name || typeof name !== "string") {
     return NextResponse.json(
@@ -39,16 +43,19 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // v1.5: filter payload to only include columns that exist in the DB.
+    // We don't include head_user_auth_uid because it doesn't exist.
+    const insertPayload = filterPayload("departments", {
+      id: `d${Date.now().toString(36)}`,
+      name,
+      description: description || "",
+      icon: icon || "👥",
+      color: color || "#0EA5E9",
+    });
+
     const { data, error } = await guard.adminClient
       .from("departments")
-      .insert({
-        id: `d${Date.now().toString(36)}`,
-        name,
-        description: description || "",
-        icon: icon || "👥",
-        color: color || "#0EA5E9",
-        head_user_auth_uid: headUserAuthUid ?? null,
-      })
+      .insert(insertPayload)
       .select()
       .single();
 

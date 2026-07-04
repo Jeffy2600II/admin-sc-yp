@@ -1,4 +1,5 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { detectSchemaColumns } from "@/lib/db/schema-detect";
 
 /**
  * YP ADMIN · API AUTH GUARD (v1.4)
@@ -55,6 +56,12 @@ export async function requireAdmin(): Promise<AdminGuard | AdminGuardFail> {
   // 2. Look up the caller's council_users row using the service role client
   //    (RLS blocks authenticated users from reading other users' rows)
   const adminClient = createAdminClient();
+
+  // v1.5: Detect which columns exist on the tables so subsequent INSERTs
+  // and UPDATEs don't fail with "Could not find the 'X' column" errors.
+  // This runs once per server process and is cached.
+  await detectSchemaColumns(adminClient);
+
   const { data: councilUser, error: councilError } = await adminClient
     .from("council_users")
     .select("id, role, full_name, approved, disabled")

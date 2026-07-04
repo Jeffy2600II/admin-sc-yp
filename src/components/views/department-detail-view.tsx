@@ -122,7 +122,7 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
     let description = dept.description || "";
     let icon = dept.icon;
     let color = dept.color;
-    let headUid = dept.head_user_auth_uid || "";
+    // v1.5: headUid removed — head_user_auth_uid column doesn't exist
 
     const controller = open({
       title: "แก้ไขฝ่ายงาน",
@@ -169,22 +169,6 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
               }}
             />
           </Field>
-          <Field label="หัวหน้าฝ่าย" htmlFor="dept-head">
-            <Select
-              id="dept-head"
-              defaultValue={headUid}
-              onChange={(e) => {
-                headUid = e.target.value;
-              }}
-            >
-              <option value="">— ไม่ระบุ —</option>
-              {allUsers.map((u) => (
-                <option key={u.id} value={u.auth_uid || ""}>
-                  {u.full_name} ({u.student_id || u.email || "—"})
-                </option>
-              ))}
-            </Select>
-          </Field>
         </FormSection>
       ),
       footer: (
@@ -210,7 +194,6 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
                 description: description.trim(),
                 icon,
                 color,
-                headUserAuthUid: headUid || null,
               });
               if (!result.success) {
                 toast(result.error || "ไม่สามารถบันทึกฝ่ายงานได้", "error");
@@ -293,7 +276,7 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
 
   const admins = members.filter((m) => m.role === "admin").length;
   const disabled = members.filter((m) => m.disabled).length;
-  const hasHead = !!dept.head_user_auth_uid;
+  // v1.5: hasHead removed — head_user_auth_uid column doesn't exist
 
   const heroStyle: React.CSSProperties = {
     background: `linear-gradient(135deg, ${dept.color} 0%, color-mix(in srgb, ${dept.color} 60%, #06B6D4) 100%)`,
@@ -322,10 +305,6 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
             <div className="admin-hero__stat">
               <div className="admin-hero__stat-value">{disabled}</div>
               <div className="admin-hero__stat-label">ปิดบัญชี</div>
-            </div>
-            <div className="admin-hero__stat">
-              <div className="admin-hero__stat-value">{hasHead ? 1 : 0}</div>
-              <div className="admin-hero__stat-label">หัวหน้า</div>
             </div>
           </div>
         </div>
@@ -365,11 +344,11 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
           count={<Chip>{members.length} คน</Chip>}
         >
           {members.map((u, idx) => {
-            const isHead = u.auth_uid === dept.head_user_auth_uid;
+            // v1.5: isHead removed — head_user_auth_uid doesn't exist
             return (
               <UserItem
                 key={u.id}
-                avatar={<Avatar name={u.full_name} color={u.color} size={40} />}
+                avatar={<Avatar name={u.full_name} color={u.color || undefined} size={40} avatarUrl={u.avatar_url ?? null} />}
                 title={
                   <>
                     {u.full_name}
@@ -384,14 +363,6 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
                       >
                         <StarIcon size={12} />
                       </span>
-                    )}
-                    {isHead && (
-                      <Chip
-                        variant="admin"
-                        style={{ fontSize: 10, marginLeft: 6 }}
-                      >
-                        หัวหน้า
-                      </Chip>
                     )}
                   </>
                 }

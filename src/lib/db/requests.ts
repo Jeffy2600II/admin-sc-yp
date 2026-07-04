@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, CouncilJoinRequest } from "@/lib/types/database";
 import { synthesizeStudentEmail } from "@/lib/utils/format";
+import { filterPayload } from "@/lib/db/schema-detect";
 
 type Client = SupabaseClient<Database>;
 
@@ -79,17 +80,30 @@ export async function approveRequest(
   const req = request as CouncilJoinRequest;
 
   // 2. Determine email and password
+  //
+  // v1.6: Use the password from the join_requests row if available (the
+  // real schema has a `password` column that the applicant set when
+  // submitting). Fall back to student_id (legacy yplabs pattern) only if
+  // the password column is empty.
   let email: string;
   let password: string;
 
   if (req.account_type === "student" && req.student_id) {
     email = synthesizeStudentEmail(req.student_id);
-    password = req.student_id;
+    // v1.6: prefer the applicant-set password from join_requests
+    password = req.password || req.student_id;
   } else {
     email =
       req.email ||
       `${req.full_name.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
-    password = "123456";
+    // v1.6: prefer the applicant-set password, fall back to default
+    password = req.password || "123456";
+  }
+
+  // Guard: password must be at least 6 chars (Supabase Auth minimum)
+  if (password.length < 6) {
+    // Pad with zeros to reach 6 chars (preserves the original intent)
+    password = password.padEnd(6, "0");
   }
 
   // 3. Create Supabase Auth user (adminClient — bypasses RLS)
@@ -116,22 +130,30 @@ export async function approveRequest(
   }
 
   // 4. Insert council_users row (adminClient — bypasses RLS)
+  //
+  // v1.5: Filter the payload to only include columns that actually exist
+  // in the database. If the ypwork migration hasn't run, `color` and
+  // `national_id` columns won't exist and the INSERT would fail with
+  // "Could not find the 'color' column". filterPayload() drops any
+  // keys that don't exist as columns.
+  const insertPayload = filterPayload("council_users", {
+    auth_uid: authUser.user.id,
+    full_name: req.full_name,
+    student_id: req.student_id || "",
+    email: req.email || email,
+    year: req.year,
+    role: "member",
+    approved: true,
+    disabled: false,
+    account_type: req.account_type,
+    department_id: req.department_id || null,
+    color: "#0EA5E9",
+    national_id: req.national_id || "",
+  });
+
   const { error: insertError } = await adminClient
     .from("council_users")
-    .insert({
-      auth_uid: authUser.user.id,
-      full_name: req.full_name,
-      student_id: req.student_id || "",
-      email: req.email || email,
-      year: req.year,
-      role: "member",
-      approved: true,
-      disabled: false,
-      account_type: req.account_type,
-      department_id: req.department_id || null,
-      color: "#0EA5E9",
-      national_id: req.national_id || "",
-    });
+    .insert(insertPayload);
 
   if (insertError) {
     console.error("[approveRequest] council_users insert error:", insertError);

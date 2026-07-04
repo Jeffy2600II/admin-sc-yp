@@ -106,7 +106,7 @@ export function DepartmentsView() {
     let description = "";
     let icon = DEPT_ICONS[0];
     let color = DEPT_COLORS[0];
-    let headUid = "";
+    // v1.5: headUid removed — head_user_auth_uid column doesn't exist
 
     const controller = open({
       title: "เพิ่มฝ่ายงานใหม่",
@@ -151,22 +151,6 @@ export function DepartmentsView() {
               }}
             />
           </Field>
-          <Field label="หัวหน้าฝ่าย" htmlFor="dept-head">
-            <Select
-              id="dept-head"
-              value=""
-              onChange={(e) => {
-                headUid = e.target.value;
-              }}
-            >
-              <option value="">— ไม่ระบุ —</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.auth_uid || ""}>
-                  {u.full_name}
-                </option>
-              ))}
-            </Select>
-          </Field>
         </FormSection>
       ),
       footer: (
@@ -192,7 +176,6 @@ export function DepartmentsView() {
                 description: description.trim(),
                 icon,
                 color,
-                headUserAuthUid: headUid || null,
               });
               if (!result.success) {
                 toast(result.error || "ไม่สามารถเพิ่มฝ่ายงานได้", "error");
@@ -244,7 +227,7 @@ export function DepartmentsView() {
             const memberCount = users.filter(
               (u) => u.department_id === d.id
             ).length;
-            const head = users.find((u) => u.auth_uid === d.head_user_auth_uid);
+            // v1.5: head_user_auth_uid doesn't exist — show member count only
             return (
               <DeptCard
                 key={d.id}
@@ -254,12 +237,6 @@ export function DepartmentsView() {
                 meta={
                   <>
                     <span>{memberCount} สมาชิก</span>
-                    {head && (
-                      <>
-                        <span>·</span>
-                        <span>หัวหน้า: {head.full_name}</span>
-                      </>
-                    )}
                   </>
                 }
                 color={d.color}

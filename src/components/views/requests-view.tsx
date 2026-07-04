@@ -150,7 +150,7 @@ export function RequestsView({ autoOpenRequestId }: RequestsViewProps) {
             }}
           >
             <div className="request-detail__avatar">
-              <Avatar name={req.full_name} color={color} size={80} />
+              <Avatar name={req.full_name} color={color} size={80} avatarUrl={null} />
             </div>
             <div className="request-detail__name">{req.full_name}</div>
             <div className="request-detail__type">
@@ -308,7 +308,7 @@ export function RequestsView({ autoOpenRequestId }: RequestsViewProps) {
             <RequestCard
               key={r.id}
               color={color}
-              avatar={<Avatar name={r.full_name} color={color} size={44} />}
+              avatar={<Avatar name={r.full_name} color={color} size={44} avatarUrl={null} />}
               title={
                 <>
                   {r.full_name}

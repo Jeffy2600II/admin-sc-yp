@@ -60,6 +60,10 @@ export interface CreateUserPayload {
   departmentId?: string | null;
   color?: string;
   role?: string;
+  /** v1.6: optional admin-set password (min 6 chars). Falls back to studentId or "123456". */
+  password?: string;
+  /** v1.6: optional avatar URL (stored in council_users.avatar_url) */
+  avatarUrl?: string | null;
 }
 
 export function createUserApi(payload: CreateUserPayload): Promise<ApiResult> {
@@ -82,6 +86,8 @@ export type UserPatch = {
   approved?: boolean;
   disabled?: boolean;
   color?: string;
+  /** v1.6: avatar URL (council_users.avatar_url) */
+  avatarUrl?: string | null;
 };
 
 export function updateUserApi(
@@ -131,7 +137,7 @@ export interface CreateDepartmentPayload {
   description?: string;
   icon?: string;
   color?: string;
-  headUserAuthUid?: string | null;
+  // v1.5: headUserAuthUid removed — column doesn't exist in real schema
 }
 
 export function createDepartmentApi(
@@ -149,7 +155,7 @@ export type DepartmentPatch = {
   description?: string;
   icon?: string;
   color?: string;
-  headUserAuthUid?: string | null;
+  // v1.5: headUserAuthUid removed — column doesn't exist in real schema
 };
 
 export function updateDepartmentApi(

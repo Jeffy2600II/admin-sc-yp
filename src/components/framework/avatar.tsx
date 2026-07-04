@@ -1,6 +1,10 @@
 /**
  * SVG-based avatar renderer (port from ypadmin-demo-v1.5 framework/avatar.js)
  *
+ * v1.6: Supports `avatarUrl` — if provided, renders an <image> inside the SVG
+ * instead of the initials text. This matches the real `council_users.avatar_url`
+ * column added in the latest schema.
+ *
  * Why SVG? On iOS, long-press on text nodes inside <div>/<a> can sometimes
  * still select/copy text — even in PWA standalone. Switching to inline SVG
  * with <text> means the browser treats it as graphic, not selectable text.
@@ -13,6 +17,8 @@ interface AvatarProps {
   color?: string;
   size?: number;
   className?: string;
+  /** v1.6: optional avatar image URL (from council_users.avatar_url) */
+  avatarUrl?: string | null;
 }
 
 export function Avatar({
@@ -20,6 +26,7 @@ export function Avatar({
   color,
   size = 32,
   className = "",
+  avatarUrl,
 }: AvatarProps) {
   const text = initials(name) || "?";
   const useBrand = !color;
@@ -44,6 +51,16 @@ export function Avatar({
     </defs>
   ) : null;
 
+  // v1.6: if avatarUrl is provided, render the image clipped to a rounded rect
+  const clipId = avatarUrl ? `${gradId}-clip` : null;
+  const clipDef = avatarUrl ? (
+    <defs>
+      <clipPath id={clipId}>
+        <rect width={size} height={size} rx={radius} ry={radius} />
+      </clipPath>
+    </defs>
+  ) : null;
+
   return (
     <svg
       className={`avatar-svg${className ? " " + className : ""}`}
@@ -54,6 +71,7 @@ export function Avatar({
       aria-hidden="true"
     >
       {gradDef}
+      {clipDef}
       <rect
         width={size}
         height={size}
@@ -61,19 +79,29 @@ export function Avatar({
         ry={radius}
         fill={fill}
       />
-      <text
-        x="50%"
-        y="50%"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontFamily="'Noto Sans Thai', 'Inter', system-ui, sans-serif"
-        fontSize={fontSize}
-        fontWeight="700"
-        fill="#FFFFFF"
-        letterSpacing="0.5"
-      >
-        {escapeXml(text)}
-      </text>
+      {avatarUrl ? (
+        <image
+          href={avatarUrl}
+          width={size}
+          height={size}
+          clipPath={`url(#${clipId})`}
+          preserveAspectRatio="xMidYMid slice"
+        />
+      ) : (
+        <text
+          x="50%"
+          y="50%"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="'Noto Sans Thai', 'Inter', system-ui, sans-serif"
+          fontSize={fontSize}
+          fontWeight="700"
+          fill="#FFFFFF"
+          letterSpacing="0.5"
+        >
+          {escapeXml(text)}
+        </text>
+      )}
     </svg>
   );
 }

@@ -215,7 +215,7 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
         <FormSection>
           <UserDeptSummary
             avatar={
-              <Avatar name={user.full_name} color={user.color} size={48} />
+              <Avatar name={user.full_name} color={user.color || undefined} size={48} avatarUrl={user.avatar_url ?? null} />
             }
             name={user.full_name}
             meta={
@@ -438,8 +438,12 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
     );
   }
 
+  // v1.5: user.color may be undefined if the ypwork migration hasn't run.
+  // Fall back to the department color, or a default brand color.
+  const userColor = user.color || dept?.color || "#0EA5E9";
+
   const heroStyle: React.CSSProperties = {
-    background: `linear-gradient(135deg, ${user.color} 0%, color-mix(in srgb, ${user.color} 60%, #06B6D4) 100%)`,
+    background: `linear-gradient(135deg, ${userColor} 0%, color-mix(in srgb, ${userColor} 60%, #06B6D4) 100%)`,
   };
 
   return (
@@ -460,7 +464,7 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
               justifyContent: "center",
             }}
           >
-            <Avatar name={user.full_name} color={user.color} size={80} />
+            <Avatar name={user.full_name} color={user.color || undefined} size={80} avatarUrl={user.avatar_url ?? null} />
           </div>
           <div className="admin-hero__name">{user.full_name}</div>
           <div className="admin-hero__date">{getRoleLabel(user)}</div>
@@ -835,7 +839,7 @@ function UserActionSheetBody({ user, onAction }: UserActionSheetBodyProps) {
     <>
       <div className="admin-action-sheet__summary">
         <div className="admin-action-sheet__avatar">
-          <Avatar name={user.full_name} color={user.color} size={56} />
+          <Avatar name={user.full_name} color={user.color || undefined} size={56} avatarUrl={user.avatar_url ?? null} />
         </div>
         <div className="admin-action-sheet__info">
           <div className="admin-action-sheet__name">{user.full_name}</div>

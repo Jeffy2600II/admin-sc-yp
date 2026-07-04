@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/api-guard";
+import { filterPayload } from "@/lib/db/schema-detect";
 
 /**
  * PATCH /api/admin/users/[id]
@@ -53,6 +54,8 @@ export async function PATCH(
   if (body.approved !== undefined) payload.approved = body.approved;
   if (body.disabled !== undefined) payload.disabled = body.disabled;
   if (body.color !== undefined) payload.color = body.color;
+  // v1.6: avatarUrl (real column)
+  if (body.avatarUrl !== undefined) payload.avatar_url = body.avatarUrl;
 
   if (Object.keys(payload).length === 0) {
     return NextResponse.json(
@@ -62,9 +65,11 @@ export async function PATCH(
   }
 
   try {
+    // v1.5: filter payload to only include columns that exist in the DB
+    const safePayload = filterPayload("council_users", payload);
     const { error } = await guard.adminClient
       .from("council_users")
-      .update(payload)
+      .update(safePayload)
       .eq("id", id);
 
     if (error) {
