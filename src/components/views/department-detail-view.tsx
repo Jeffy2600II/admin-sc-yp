@@ -30,9 +30,11 @@ import { useDangerConfirm } from "@/components/framework/danger-confirm";
 import { useToast } from "@/components/framework/toast-provider";
 import {
   getDepartmentById,
-  updateDepartment,
-  deleteDepartment,
 } from "@/lib/db/departments";
+import {
+  updateDepartmentApi,
+  deleteDepartmentApi,
+} from "@/lib/api/admin";
 import { roleLabel } from "@/lib/utils/format";
 import {
   EditIcon,
@@ -203,19 +205,15 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
                 toast("กรุณากรอกชื่อฝ่ายงาน", "error");
                 return;
               }
-              const updated = await updateDepartment(
-                getBrowserClient(),
-                deptId,
-                {
-                  name: trimmedName,
-                  description: description.trim(),
-                  icon,
-                  color,
-                  headUserAuthUid: headUid || null,
-                }
-              );
-              if (!updated) {
-                toast("ไม่สามารถบันทึกฝ่ายงานได้", "error");
+              const result = await updateDepartmentApi(deptId, {
+                name: trimmedName,
+                description: description.trim(),
+                icon,
+                color,
+                headUserAuthUid: headUid || null,
+              });
+              if (!result.success) {
+                toast(result.error || "ไม่สามารถบันทึกฝ่ายงานได้", "error");
                 return;
               }
               toast(`บันทึกฝ่าย "${trimmedName}" เรียบร้อย`, "success");
@@ -266,7 +264,7 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
     });
     if (!confirmed) return;
 
-    const result = await deleteDepartment(getBrowserClient(), deptId);
+    const result = await deleteDepartmentApi(deptId);
     if (!result.success) {
       toast(result.error || "ไม่สามารถลบฝ่ายงานได้", "error");
       return;

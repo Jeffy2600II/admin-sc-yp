@@ -19,10 +19,12 @@ import { useDangerConfirm } from "@/components/framework/danger-confirm";
 import { useToast } from "@/components/framework/toast-provider";
 import {
   getYears,
-  addYear,
-  toggleYearClosed,
   MAX_RETAINED,
 } from "@/lib/db/years";
+import {
+  addYearApi,
+  updateYearApi,
+} from "@/lib/api/admin";
 import {
   BanIcon,
   CheckCircleIcon,
@@ -112,7 +114,7 @@ export function YearsView() {
                 toast("กรุณากรอกปีการศึกษา", "error");
                 return;
               }
-              const result = await addYear(getBrowserClient(), Number(trimmed));
+              const result = await addYearApi(Number(trimmed));
               if (!result.success) {
                 toast(result.error || "ไม่สามารถเพิ่มปีได้", "error");
                 return;
@@ -172,9 +174,9 @@ export function YearsView() {
       if (!confirmed) return;
     }
 
-    const updated = await toggleYearClosed(getBrowserClient(), yr.year);
-    if (!updated) {
-      toast("ไม่สามารถเปลี่ยนสถานะปีได้", "error");
+    const result = await updateYearApi(yr.year, { closed: !yr.closed });
+    if (!result.success) {
+      toast(result.error || "ไม่สามารถเปลี่ยนสถานะปีได้", "error");
       return;
     }
     toast(`${yr.closed ? "เปิด" : "ปิด"}รับสมาชิกปี ${yr.year} เรียบร้อย`, "info");

@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/api-guard";
 import { approveRequest } from "@/lib/db/requests";
 
 /**
  * POST /api/admin/approve-request
  * Body: { requestId: string }
  *
- * Approves a council_join_request by:
- * 1. Creating a Supabase Auth account (admin client — bypasses RLS)
- * 2. Inserting a council_users row (browser client)
- * 3. Deleting the request
- *
- * Requires service-role key — server-only route.
+ * v1.4: Now uses requireAdmin() to verify the caller is an authenticated
+ * admin, then uses the service-role client for ALL operations (bypasses
+ * RLS). Previously used a mix of admin + browser clients, which caused
+ * the council_users INSERT to be blocked by RLS.
  */
 export async function POST(request: NextRequest) {
   let requestId: string | undefined;
@@ -32,10 +30,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const guard = await requireAdmin();
+  if (!guard.ok) {
+    return NextResponse.json(
+      { success: false, error: "ไม่ได้รับอนุญาต" },
+      { status: guard.response.status }
+    );
+  }
+
   try {
-    const adminClient = createAdminClient();
-    const browserClient = await createClient();
-    const result = await approveRequest(adminClient, browserClient, requestId);
+    const result = await approveRequest(guard.adminClient, requestId);
     return NextResponse.json(result, {
       status: result.success ? 200 : 400,
     });

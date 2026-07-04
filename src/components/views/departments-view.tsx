@@ -19,7 +19,8 @@ import {
 } from "@/components/ui-blocks";
 import { useBottomSheet } from "@/components/framework/bottom-sheet";
 import { useToast } from "@/components/framework/toast-provider";
-import { getDepartments, createDepartment } from "@/lib/db/departments";
+import { getDepartments } from "@/lib/db/departments";
+import { createDepartmentApi } from "@/lib/api/admin";
 import type { CouncilUser, Department } from "@/lib/types/database";
 
 export const DEPT_COLORS = [
@@ -186,15 +187,15 @@ export function DepartmentsView() {
                 toast("กรุณากรอกชื่อฝ่ายงาน", "error");
                 return;
               }
-              const created = await createDepartment(getBrowserClient(), {
+              const result = await createDepartmentApi({
                 name: trimmedName,
                 description: description.trim(),
                 icon,
                 color,
                 headUserAuthUid: headUid || null,
               });
-              if (!created) {
-                toast("ไม่สามารถเพิ่มฝ่ายงานได้", "error");
+              if (!result.success) {
+                toast(result.error || "ไม่สามารถเพิ่มฝ่ายงานได้", "error");
                 return;
               }
               toast(`เพิ่มฝ่าย "${trimmedName}" เรียบร้อย`, "success");

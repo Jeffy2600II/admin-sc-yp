@@ -6,6 +6,7 @@ type Client = SupabaseClient<Database>;
 
 /**
  * Fetch all pending join requests, ordered by creation date descending.
+ * Safe to call from the browser (RLS allows authenticated SELECT).
  */
 export async function getRequests(
   supabase: Client,
@@ -19,13 +20,19 @@ export async function getRequests(
 
 /**
  * Reject (delete) a join request by ID.
- * Returns { success, error? }.
+ *
+ * v1.4: This now requires an adminClient (service role) because RLS on
+ * council_join_requests only allows the service role to DELETE. The
+ * browser client can only SELECT/INSERT.
+ *
+ * @param adminClient - Service-role Supabase client (bypasses RLS)
+ * @param requestId   - UUID of the join request to reject
  */
 export async function rejectRequest(
-  supabase: Client,
+  adminClient: Client,
   requestId: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
+  const { error } = await adminClient
     .from("council_join_requests")
     .delete()
     .eq("id", requestId);
@@ -40,19 +47,22 @@ export async function rejectRequest(
 /**
  * Approve a join request (server-side only).
  *
+ * v1.4 FIX: ALL database writes now use the adminClient (service role)
+ * which bypasses RLS. Previously the council_users INSERT used the
+ * browser client, which RLS blocked — so approving requests always
+ * failed with "ไม่สามารถสร้างบัญชีผู้ใช้ได้".
+ *
  * Steps:
- * 1. Fetch the request from council_join_requests
- * 2. Create a Supabase Auth user (admin client — bypasses RLS)
- * 3. Insert a council_users row (browser client with user context)
- * 4. Delete the request
+ * 1. Fetch the request from council_join_requests (adminClient)
+ * 2. Create a Supabase Auth user (adminClient.auth.admin.createUser)
+ * 3. Insert a council_users row (adminClient — bypasses RLS)
+ * 4. Delete the request (adminClient — bypasses RLS)
  *
  * @param adminClient  - Service-role Supabase client (bypasses RLS)
- * @param client       - Regular Supabase client (for council_users insert)
  * @param requestId    - UUID of the join request to approve
  */
 export async function approveRequest(
   adminClient: Client,
-  client: Client,
   requestId: string,
 ): Promise<{ success: boolean; error?: string }> {
   // 1. Fetch the request
@@ -76,12 +86,17 @@ export async function approveRequest(
     email = synthesizeStudentEmail(req.student_id);
     password = req.student_id;
   } else {
-    email = req.email || `${req.full_name.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
+    email =
+      req.email ||
+      `${req.full_name.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
     password = "123456";
   }
 
-  // 3. Create Supabase Auth user
-  const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
+  // 3. Create Supabase Auth user (adminClient — bypasses RLS)
+  const {
+    data: authUser,
+    error: authError,
+  } = await adminClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -94,33 +109,48 @@ export async function approveRequest(
 
   if (authError || !authUser.user) {
     console.error("[approveRequest] Auth createUser error:", authError);
-    return { success: false, error: "ไม่สามารถสร้างบัญชี Auth ได้" };
+    return {
+      success: false,
+      error: authError?.message || "ไม่สามารถสร้างบัญชี Auth ได้",
+    };
   }
 
-  // 4. Insert council_users row
-  const { error: insertError } = await client.from("council_users").insert({
-    auth_uid: authUser.user.id,
-    full_name: req.full_name,
-    student_id: req.student_id || "",
-    email: req.email || email,
-    year: req.year,
-    role: "member",
-    approved: true,
-    disabled: false,
-    account_type: req.account_type,
-    department_id: req.department_id || null,
-    color: "#0EA5E9",
-    national_id: req.national_id || "",
-  });
+  // 4. Insert council_users row (adminClient — bypasses RLS)
+  const { error: insertError } = await adminClient
+    .from("council_users")
+    .insert({
+      auth_uid: authUser.user.id,
+      full_name: req.full_name,
+      student_id: req.student_id || "",
+      email: req.email || email,
+      year: req.year,
+      role: "member",
+      approved: true,
+      disabled: false,
+      account_type: req.account_type,
+      department_id: req.department_id || null,
+      color: "#0EA5E9",
+      national_id: req.national_id || "",
+    });
 
   if (insertError) {
     console.error("[approveRequest] council_users insert error:", insertError);
-    // Attempt to clean up the auth user
-    await adminClient.auth.admin.deleteUser(authUser.user.id);
-    return { success: false, error: "ไม่สามารถสร้างบัญชีผู้ใช้ได้" };
+    // Attempt to clean up the auth user we just created
+    try {
+      await adminClient.auth.admin.deleteUser(authUser.user.id);
+    } catch (cleanupErr) {
+      console.error(
+        "[approveRequest] failed to clean up auth user after insert failure:",
+        cleanupErr
+      );
+    }
+    return {
+      success: false,
+      error: `ไม่สามารถสร้างบัญชีผู้ใช้ได้: ${insertError.message}`,
+    };
   }
 
-  // 5. Delete the request
+  // 5. Delete the request (adminClient — bypasses RLS)
   const { error: deleteError } = await adminClient
     .from("council_join_requests")
     .delete()
@@ -128,7 +158,7 @@ export async function approveRequest(
 
   if (deleteError) {
     console.error("[approveRequest] delete request error:", deleteError);
-    // Non-fatal — the user was already created
+    // Non-fatal — the user was already created, just log the error
   }
 
   return { success: true };

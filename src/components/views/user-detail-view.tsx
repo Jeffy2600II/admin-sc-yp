@@ -29,10 +29,12 @@ import { useDangerConfirm } from "@/components/framework/danger-confirm";
 import { useToast } from "@/components/framework/toast-provider";
 import {
   getUserById,
-  updateUser,
-  deleteUser,
   getRoleLabel,
 } from "@/lib/db/users";
+import {
+  updateUserApi,
+  deleteUserApi,
+} from "@/lib/api/admin";
 import { getDepartments } from "@/lib/db/departments";
 import { getYears } from "@/lib/db/years";
 import {
@@ -171,7 +173,7 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
                 }
               }
 
-              const patch: Parameters<typeof updateUser>[2] = {
+              const patch: Parameters<typeof updateUserApi>[1] = {
                 fullName: trimmedName,
                 accountType: formRef.accountType,
                 role: formRef.role,
@@ -184,13 +186,9 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
                 patch.email = formRef.email.trim();
               }
 
-              const updated = await updateUser(
-                getBrowserClient(),
-                userId,
-                patch
-              );
-              if (!updated) {
-                toast("ไม่สามารถบันทึกบัญชีได้", "error");
+              const result = await updateUserApi(userId, patch);
+              if (!result.success) {
+                toast(result.error || "ไม่สามารถบันทึกบัญชีได้", "error");
                 return;
               }
               toast(`บันทึกบัญชี "${trimmedName}" เรียบร้อย`, "success");
@@ -281,11 +279,11 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
                 controller.close();
                 return;
               }
-              const updated = await updateUser(getBrowserClient(), userId, {
+              const result = await updateUserApi(userId, {
                 departmentId: target,
               });
-              if (!updated) {
-                toast("ไม่สามารถเปลี่ยนฝ่ายได้", "error");
+              if (!result.success) {
+                toast(result.error || "ไม่สามารถเปลี่ยนฝ่ายได้", "error");
                 return;
               }
               const newDept = departments.find((d) => d.id === target);
@@ -329,21 +327,21 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
   const handleAction = async (action: string) => {
     if (!user) return;
     if (action === "approve") {
-      const updated = await updateUser(getBrowserClient(), userId, {
+      const result = await updateUserApi(userId, {
         approved: true,
       });
-      if (!updated) {
-        toast("ไม่สามารถอนุมัติบัญชีได้", "error");
+      if (!result.success) {
+        toast(result.error || "ไม่สามารถอนุมัติบัญชีได้", "error");
         return;
       }
       toast(`อนุมัติบัญชี ${user.full_name} เรียบร้อย`, "success");
       fetchData();
     } else if (action === "enable") {
-      const updated = await updateUser(getBrowserClient(), userId, {
+      const result = await updateUserApi(userId, {
         disabled: false,
       });
-      if (!updated) {
-        toast("ไม่สามารถเปิดใช้งานบัญชีได้", "error");
+      if (!result.success) {
+        toast(result.error || "ไม่สามารถเปิดใช้งานบัญชีได้", "error");
         return;
       }
       toast(`เปิดใช้งานบัญชี ${user.full_name} เรียบร้อย`, "success");
@@ -360,11 +358,11 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
         finalActionIcon: <BanIcon size={16} />,
       });
       if (!confirmed) return;
-      const updated = await updateUser(getBrowserClient(), userId, {
+      const result = await updateUserApi(userId, {
         disabled: true,
       });
-      if (!updated) {
-        toast("ไม่สามารถปิดบัญชีได้", "error");
+      if (!result.success) {
+        toast(result.error || "ไม่สามารถปิดบัญชีได้", "error");
         return;
       }
       toast(`ปิดบัญชี ${user.full_name} เรียบร้อย`, "info");
@@ -411,9 +409,9 @@ export function UserDetailView({ userId }: UserDetailViewProps) {
         entityName: user.full_name,
       });
       if (!confirmed) return;
-      const ok = await deleteUser(getBrowserClient(), userId);
-      if (!ok) {
-        toast("ไม่สามารถลบบัญชีได้ — อาจมี RLS ป้องกัน", "error");
+      const result = await deleteUserApi(userId);
+      if (!result.success) {
+        toast(result.error || "ไม่สามารถลบบัญชีได้", "error");
         return;
       }
       toast(`ลบบัญชี ${user.full_name} เรียบร้อย`, "success");

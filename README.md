@@ -1,4 +1,4 @@
-# YP Admin v1.3
+# YP Admin v1.4
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -166,6 +166,51 @@ INSERT INTO public.council_users (
 
 ---
 
+## การปรับปรุงใน v1.4 (Critical Data Save Fix + Sheet Stability)
+
+### Bug Fixes (Critical — แก้ไขปัญหา "บันทึกข้อมูลไม่ได้")
+- **RLS บล็อกการบันทึกข้อมูลทั้งหมด** — ปัญหาร้ายแรงที่สุดของ v1.3: ระบบใช้ browser client (anon key + user auth) สำหรับการเขียนข้อมูลทั้งหมด แต่ yplabs schema มี RLS policies ที่เข้มงวด:
+  - `council_users` — authenticated อ่านได้แค่แถวตัวเอง, **ไม่มี INSERT/UPDATE/DELETE policy**
+  - `council_years` — authenticated อ่านได้อย่างเดียว, **ไม่มี INSERT/UPDATE policy**
+  - `council_join_requests` — authenticated อ่าน/insert ได้ แต่ **ไม่มี DELETE policy**
+  - ผล: อนุมัติคำขอ, แก้ไข/ลบผู้ใช้, เพิ่ม/ปิดปี, ปฏิเสธคำขอ — **ทั้งหมดถูกบล็อก**
+- **แก้ไข**: สร้าง API routes ทั้งหมดที่ใช้ service role key (bypass RLS) ผ่าน `requireAdmin()` guard:
+  - `POST /api/admin/approve-request` — อนุมัติคำขอ (แก้ไขให้ใช้ adminClient สำหรับ council_users INSERT)
+  - `POST /api/admin/requests/[id]/reject` — ปฏิเสธคำขอ
+  - `POST /api/admin/users` — สร้างผู้ใช้ใหม่
+  - `PATCH /api/admin/users/[id]` — แก้ไขผู้ใช้
+  - `DELETE /api/admin/users/[id]` — ลบผู้ใช้ (ลบทั้ง council_users + Supabase Auth)
+  - `POST /api/admin/years` — เพิ่มปีการศึกษา
+  - `PATCH /api/admin/years/[year]` — เปิด/ปิดรับสมาชิก
+  - `DELETE /api/admin/years/[year]` — ลบปี
+  - `POST /api/admin/departments` — สร้างฝ่ายงาน
+  - `PATCH /api/admin/departments/[id]` — แก้ไขฝ่ายงาน
+  - `DELETE /api/admin/departments/[id]` — ลบฝ่ายงาน
+
+### Auth Guard (`requireAdmin()`)
+- ทุก API route ผ่าน `requireAdmin()` ก่อนดำเนินการ:
+  1. ตรวจสอบ Supabase Auth session จาก cookies
+  2. ตรวจสอบ `council_users.role === 'admin'` (via service role client)
+  3. ตรวจสอบ `approved === true && disabled === false`
+  4. คืน adminClient (service role) สำหรับการเขียนข้อมูล
+- ป้องกัน self-deletion (ไม่ให้ลบบัญชีตัวเอง)
+
+### Bottom Sheet History Sync (Stability Fix)
+- **ปัญหา**: เมื่อ drag-to-close sheet, ระบบใช้ `skipHistory: true` ซึ่งลบ sheet จาก internal stack แต่ **ไม่ได้ pop browser history entry** → กดปุ่มย้อนกลับแล้วไม่เกิดอะไรขึ้น (popstate handler เจอ stale sheet marker แล้ว return ก่อน)
+- **แก้ไข**: drag-close ใช้ `controller.close()` (ไม่ skipHistory) → `closeSheetHistory()` เรียก `history.back()` อย่างถูกต้อง → history sync สมบูรณ์
+- **เพิ่ม stale-marker cleanup**: หาก popstate เจอ sheet marker ที่ไม่มี sheet ใน stack อีก → ลบ marker ออกจาก state ผ่าน `replaceState` เพื่อกัน phantom back-button presses
+
+### API Client Helpers (`src/lib/api/admin.ts`)
+- สร้าง helper functions สำหรับเรียก API routes ทั้งหมด (`approveRequestApi`, `rejectRequestApi`, `updateUserApi`, `deleteUserApi`, `addYearApi`, `updateYearApi`, `createDepartmentApi`, `updateDepartmentApi`, `deleteDepartmentApi`)
+- Views เรียกผ่าน helpers แทนการใช้ browser client โดยตรง → error handling สม่ำเสมอ
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ทุก write operation ผ่าน API routes ที่มี auth guard + service role key
+- Bottom sheet history sync ทำงานถูกต้องเมื่อ drag-close, ESC, backdrop click, hardware back
+
+---
+
 ## การปรับปรุงใน v1.3 (Critical Framework Fix)
 
 ### Bug Fixes (Critical — แก้ไขปัญหาหลักของ v1.2)
@@ -245,4 +290,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.3
+© 2026 YP Admin · v1.4

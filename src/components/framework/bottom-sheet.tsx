@@ -200,7 +200,28 @@ function _onPopState() {
   if (typeof window === "undefined") return;
   const state = (window.history.state || {}) as Record<string, unknown>;
   const topSheet = _sheetStack[_sheetStack.length - 1];
-  if (state[SHEET_MARKER]) return; // still sheet state
+
+  // If the current state still has a sheet marker, check if it's stale
+  // (belongs to a sheet that's no longer in our stack). If so, remove it
+  // silently so it doesn't cause phantom back-button presses.
+  if (state[SHEET_MARKER]) {
+    const markerId = state[SHEET_MARKER] as number;
+    const stillOpen = _sheetStack.find((h) => h.id === markerId);
+    if (!stillOpen) {
+      // Stale marker — replace the state to remove the marker
+      try {
+        const cleanState = { ...state };
+        delete cleanState[SHEET_MARKER];
+        window.history.replaceState(cleanState, "", window.location.href);
+      } catch (e) {
+        // ignore
+      }
+    }
+    return; // still sheet state (or cleaned up)
+  }
+
+  // No sheet marker in current state → we navigated back to a non-sheet state
+  // Close the topmost sheet if one is still open
   if (topSheet) {
     _isHandlingPop = true;
     removeFromStack(topSheet);
@@ -589,8 +610,15 @@ function SheetPortal({ state }: { state: SheetState }) {
         sheet.classList.add("is-closing");
         requestAnimationFrame(() => {
           sheet.style.transform = `translate3d(0, ${sheetHeight}px, 0)`;
-          setTimeout(() => controller.close({ skipHistory: true }), 200);
         });
+        // v1.4 FIX: Don't skip history — call controller.close() without
+        // skipHistory so closeSheetHistory() properly pops the browser's
+        // history entry via history.back(). Previously we used
+        // { skipHistory: true } which left a stale history entry — after
+        // drag-closing, pressing hardware back did nothing visible (the
+        // popstate handler saw the stale sheet marker and returned early).
+        // Now the history is properly synced.
+        setTimeout(() => controller.close(), 200);
       } else {
         sheet.classList.add("is-animating");
         requestAnimationFrame(() => {

@@ -15,7 +15,7 @@ import {
 import { useBottomSheet } from "@/components/framework/bottom-sheet";
 import { useDangerConfirm } from "@/components/framework/danger-confirm";
 import { useToast } from "@/components/framework/toast-provider";
-import { getRequests, rejectRequest } from "@/lib/db/requests";
+import { getRequests } from "@/lib/db/requests";
 import {
   formatDateTime,
   maskNationalId,
@@ -117,14 +117,22 @@ export function RequestsView({ autoOpenRequestId }: RequestsViewProps) {
       finalActionIcon: <XCircleIcon size={16} />,
     });
     if (!confirmed) return;
-    const result = await rejectRequest(getBrowserClient(), req.id);
-    if (!result.success) {
-      toast(result.error || "ไม่สามารถปฏิเสธคำขอได้", "error");
-      return;
+    try {
+      const response = await fetch(`/api/admin/requests/${req.id}/reject`, {
+        method: "POST",
+      });
+      const result = await response.json();
+      if (!result.success) {
+        toast(result.error || "ไม่สามารถปฏิเสธคำขอได้", "error");
+        return;
+      }
+      toast(`ปฏิเสธคำขอของ "${req.full_name}" เรียบร้อย`, "info");
+      afterAction?.();
+      fetchData();
+    } catch (err) {
+      console.error("[rejectRequest]", err);
+      toast("เกิดข้อผิดพลาดในการปฏิเสธคำขอ", "error");
     }
-    toast(`ปฏิเสธคำขอของ "${req.full_name}" เรียบร้อย`, "info");
-    afterAction?.();
-    fetchData();
   };
 
   const openRequestDetailSheet = (req: CouncilJoinRequest) => {
