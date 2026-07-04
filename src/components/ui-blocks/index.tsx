@@ -567,6 +567,8 @@ interface YearCardProps {
   slotColor: string;
   memberCount: number;
   onToggle: () => void;
+  /** v1.8: optional delete handler — if provided, shows a delete button */
+  onDelete?: () => void;
   animationDelay?: number;
 }
 
@@ -579,6 +581,7 @@ export function YearCard({
   slotColor,
   memberCount,
   onToggle,
+  onDelete,
   animationDelay,
 }: YearCardProps) {
   const accentColor = isCurrent
@@ -620,14 +623,30 @@ export function YearCard({
           {!isRetained && " · ข้อมูลจะหายจากระบบหลัง archive"}
         </div>
       </div>
-      <button
-        type="button"
-        className={`btn ${closed ? "btn--primary" : "btn--ghost"}`}
-        onClick={onToggle}
-        style={{ flexShrink: 0 }}
-      >
-        {closed ? "🔓 เปิดรับ" : "ปิดรับ"}
-      </button>
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+        <button
+          type="button"
+          className={`btn ${closed ? "btn--primary" : "btn--ghost"}`}
+          onClick={onToggle}
+        >
+          {closed ? "🔓 เปิดรับ" : "ปิดรับ"}
+        </button>
+        {onDelete && (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={onDelete}
+            aria-label={`ลบปี ${year}`}
+            title={`ลบปี ${year}`}
+            style={{
+              color: "var(--yp-danger-600, #DC2626)",
+              borderColor: "rgba(220, 38, 38, 0.30)",
+            }}
+          >
+            🗑
+          </button>
+        )}
+      </div>
     </div>
   );
 }

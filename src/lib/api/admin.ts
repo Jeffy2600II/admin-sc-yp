@@ -1,5 +1,5 @@
 /**
- * YP ADMIN · API CLIENT HELPERS (v1.4)
+ * YP ADMIN · API CLIENT HELPERS (v1.8)
  *
  * Thin wrappers around fetch() for the admin API routes. All write
  * operations go through these helpers so the views don't have to
@@ -7,6 +7,11 @@
  *
  * Every helper returns `{ success, error?, ...data }` matching the
  * API route response shape.
+ *
+ * v1.8 improvements:
+ * - `apiCall` now checks HTTP status and returns a clear error when the
+ *   response is not JSON (e.g., 401 redirect, 500 HTML error page).
+ * - Better error messages: includes HTTP status code + server message.
  */
 
 export interface ApiResult {
@@ -21,8 +26,34 @@ async function apiCall(
 ): Promise<ApiResult> {
   try {
     const response = await fetch(url, options);
-    const data = await response.json();
-    return data as ApiResult;
+
+    // v1.8: Try to parse JSON, but handle non-JSON responses gracefully
+    // (e.g., 401 redirect pages, 500 HTML error pages, network proxies)
+    const contentType = response.headers.get("content-type") || "";
+    let data: ApiResult;
+    if (contentType.includes("application/json")) {
+      data = (await response.json()) as ApiResult;
+    } else {
+      // Non-JSON response — likely an error
+      const text = await response.text().catch(() => "");
+      return {
+        success: false,
+        error: `HTTP ${response.status}: ${text.slice(0, 200) || response.statusText}`,
+      };
+    }
+
+    // v1.8: If HTTP status indicates failure but JSON says success, override
+    if (!response.ok && data.success) {
+      data.success = false;
+      data.error = data.error || `HTTP ${response.status}`;
+    }
+
+    // v1.8: If HTTP status is OK but JSON says failure, add status context
+    if (!response.ok && data.error) {
+      data.error = `HTTP ${response.status}: ${data.error}`;
+    }
+
+    return data;
   } catch (err) {
     console.error(`[apiCall ${url}]`, err);
     return {

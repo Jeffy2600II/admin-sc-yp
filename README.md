@@ -1,4 +1,4 @@
-# YP Admin v1.7
+# YP Admin v1.8
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -163,6 +163,42 @@ INSERT INTO public.council_users (
 - **Mobile-first responsive** (iPhone 14 → desktop)
 - **PWA-ready** (manifest + icons)
 - **Sky Blue + Cyan accent** บนพื้นขาวสะอาด
+
+---
+
+## การปรับปรุงใน v1.8 (DELETE Fix + Error Handling)
+
+### Bug Fixes (Critical — แก้ไข "ลบไม่ได้")
+- **years-view ไม่มีฟังก์ชันลบปี** — ปัญหาหลัก: v1.7 มีแค่ toggle closed/open แต่ **ไม่มีฟังก์ชันลบปีเลย** แม้ API route `/api/admin/years/[year]` DELETE จะมีอยู่แล้ว
+  - **แก้ไข**: เพิ่ม `handleDelete()` ใน years-view + เพิ่มปุ่มลบใน YearCard component
+  - ตรวจสอบก่อนลบ: ถ้าปีนั้นมีสมาชิกอยู่ → ปฏิเสธการลบพร้อมแจ้งจำนวนสมาชิก
+  - ใช้ `confirmDestructive` (2-step type-to-confirm) เหมือนลบบัญชี/ฝ่าย
+- **requests-view ใช้ fetch ตรง ๆ ไม่ผ่าน helper** — เมื่อ API ตอบ non-JSON (เช่น 401 redirect, 500 HTML) การ `response.json()` จะ throw แล้ว catch แสดงแค่ "เกิดข้อผิดพลาด" ไม่บอกสาเหตุจริง
+  - **แก้ไข**: เปลี่ยนไปใช้ `rejectRequestApi` helper ที่มี error handling ที่ดีกว่า
+
+### Error Handling (v1.8 — แสดง error จริง)
+- **`apiCall` helper ตรวจ HTTP status + content-type**:
+  - ถ้า response ไม่ใช่ JSON (เช่น 401 redirect, 500 HTML) → คืน `HTTP {status}: {text snippet}`
+  - ถ้า HTTP status ไม่ OK แต่ JSON บอก success → override เป็น failure
+  - ถ้า HTTP status ไม่ OK และมี error message → นำหน้าด้วย `HTTP {status}:`
+- ผล: ผู้ใช้เห็น error message ที่ชัดเจน เช่น `HTTP 403: ไม่มีสิทธิ์` แทนที่จะเป็นแค่ "ไม่สามารถลบได้"
+
+### YearCard Component (v1.8)
+- เพิ่ม prop `onDelete?: () => void` — ถ้าส่งมาจะแสดงปุ่มลบ (🗑) สีแดงข้างปุ่ม toggle
+- ถ้าไม่ส่ง onDelete จะไม่แสดงปุ่มลบ (backward compatible)
+
+### RLS Policies (ยืนยันจาก schema_sc.md — รองรับ DELETE ครบ)
+- `council_users`: `council_users_delete_admin` — admin ลบได้ ✓
+- `council_join_requests`: `DELETE: admin` — admin ลบได้ ✓
+- `council_years`: `council_years_modify_admin` — authenticated ทำ ALL (รวม DELETE) ✓
+- `departments`: `departments_modify_admin` — admin ลบได้ ✓
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ทุก DELETE operation ผ่าน API routes ที่มี auth guard + service role key
+- years-view มีปุ่มลบปีแล้ว (v1.7 ไม่มี)
+- requests-view ใช้ helper แทน fetch ตรง ๆ → error handling ดีขึ้น
+- apiCall แสดง HTTP status code + server message เมื่อเกิด error
 
 ---
 
@@ -453,4 +489,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.7
+© 2026 YP Admin · v1.8

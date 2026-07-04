@@ -24,17 +24,19 @@ import {
 import {
   addYearApi,
   updateYearApi,
+  deleteYearApi,
 } from "@/lib/api/admin";
 import {
   BanIcon,
   CheckCircleIcon,
   InfoIcon,
+  TrashIcon,
 } from "@/lib/icons";
 import type { CouncilYear, CouncilUser } from "@/lib/types/database";
 
 export function YearsView() {
   const { open } = useBottomSheet();
-  const { confirmDangerousAction } = useDangerConfirm();
+  const { confirmDangerousAction, confirmDestructive } = useDangerConfirm();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -183,6 +185,45 @@ export function YearsView() {
     fetchData();
   };
 
+  // v1.8: Add delete year handler (was missing in v1.7)
+  const handleDelete = async (yr: CouncilYear) => {
+    const yearUsers = users.filter((u) => u.year === yr.year);
+
+    // Block deletion if there are users in this year
+    if (yearUsers.length > 0) {
+      toast(
+        `ไม่สามารถลบปี ${yr.year} ได้ — ยังมีสมาชิก ${yearUsers.length} คนอยู่ในปีนี้ กรุณาย้ายหรือลบสมาชิกก่อน`,
+        "error"
+      );
+      return;
+    }
+
+    const confirmed = await confirmDestructive({
+      title: `ลบปีการศึกษา ${yr.year}`,
+      message: `การลบนี้ไม่สามารถย้อนกลับได้ — ปี ${yr.year} จะหายไปจากระบบทันที`,
+      impact: [
+        `ปีการศึกษา ${yr.year} จะถูกลบถาวรจากระบบ`,
+        "ข้อมูลประวัติของปีนี้จะหายไป",
+        "ถ้าต้องการใช้อีกครั้งต้องสร้างปีใหม่",
+      ],
+      confirmText: "ฉันเข้าใจผลกระทบ",
+      requireText: String(yr.year),
+      requireHint: `พิมพ์ "${yr.year}" เพื่อยืนยันการลบ`,
+      finalAction: "ลบปีการศึกษาถาวร",
+      finalActionIcon: <TrashIcon size={16} />,
+      entityName: `ปี ${yr.year}`,
+    });
+    if (!confirmed) return;
+
+    const result = await deleteYearApi(yr.year);
+    if (!result.success) {
+      toast(result.error || `ไม่สามารถลบปี ${yr.year} ได้`, "error");
+      return;
+    }
+    toast(`ลบปีการศึกษา ${yr.year} เรียบร้อย`, "success");
+    fetchData();
+  };
+
   if (loading) {
     return (
       <div className="page container" style={{ padding: "80px 20px" }}>
@@ -302,6 +343,7 @@ export function YearsView() {
               slotColor={slotColor}
               memberCount={yearUsers.length}
               onToggle={() => handleToggle(y)}
+              onDelete={() => handleDelete(y)}
               animationDelay={i * 40}
             />
           );
