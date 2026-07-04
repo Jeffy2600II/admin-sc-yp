@@ -2,10 +2,18 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
- * Public paths that do NOT require authentication.
- * - /login  — login page
- * - /       — root page (has its own redirect logic)
- * - /api/*  — API routes handle auth internally
+ * YP ADMIN · MIDDLEWARE (v1.2)
+ *
+ * Route protection + auth redirect logic.
+ *
+ * Behavior:
+ * - Protected routes (everything except /login, /, /api/*) → redirect to
+ *   /login?redirect=<original> if no session
+ * - Already authenticated & visiting /login → redirect to /dashboard
+ * - Static assets (_next, icons, manifest, service-worker) bypass middleware
+ *
+ * The redirect param is preserved so login can redirect back after success.
+ * Open-redirect protection is enforced client-side in lib/auth/redirect.ts.
  */
 const PUBLIC_PATHS = ["/login", "/"];
 

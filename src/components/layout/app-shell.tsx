@@ -3,11 +3,18 @@
 /**
  * App shell — top-bar + side-bar + FAB + main content slot.
  * Ported from ypadmin-demo-v1.5 framework/app-shell.js (v1.3 sidebar design).
+ *
+ * v1.2 improvements:
+ * - Title swap animation (matches demo's setTitleWithSwap behavior)
+ * - Perf controller integration (pauses hero animations when off-screen)
+ * - Better sidebar scroll-lock with body class (matches demo)
+ * - Cleaner transition end handling
  */
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Avatar } from "@/components/framework/avatar";
+import { usePerfController } from "@/components/framework/perf-controller";
 import {
   MenuIcon,
   ArrowLeftIcon,
@@ -101,6 +108,10 @@ export function AppShell({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const titleRef = useRef<HTMLDivElement>(null);
+
+  // Initialize performance controller (pauses hero animations off-screen)
+  usePerfController();
 
   // Apply top accent via CSS variables on the shell root
   const shellStyle: React.CSSProperties = {
@@ -113,14 +124,31 @@ export function AppShell({
 
   const displayTitle = accentTitle || title;
 
-  // Lock body scroll when sidebar open
+  // ── Title swap animation (matches demo's setTitleWithSwap) ──
+  useEffect(() => {
+    const titleEl = titleRef.current;
+    if (!titleEl) return;
+    // Remove swapping class, force reflow, then re-add to restart animation
+    titleEl.classList.remove("is-swapping");
+    void titleEl.offsetWidth; // force reflow
+    titleEl.classList.add("is-swapping");
+    const timer = setTimeout(() => {
+      titleEl.classList.remove("is-swapping");
+    }, 360);
+    return () => clearTimeout(timer);
+  }, [displayTitle]);
+
+  // Lock body scroll when sidebar open (matches demo's yp-sidebar-open body class)
   useEffect(() => {
     if (sidebarOpen) {
+      document.body.classList.add("yp-sidebar-open");
       document.body.style.overflow = "hidden";
     } else {
+      document.body.classList.remove("yp-sidebar-open");
       document.body.style.overflow = "";
     }
     return () => {
+      document.body.classList.remove("yp-sidebar-open");
       document.body.style.overflow = "";
     };
   }, [sidebarOpen]);
@@ -145,6 +173,11 @@ export function AppShell({
     router.back();
   }, [router]);
 
+  // Hamburger button press feedback
+  const handleMenuClick = () => {
+    setSidebarOpen(true);
+  };
+
   return (
     <div className="app-shell" style={shellStyle} data-shell>
       <header className="top-bar">
@@ -154,7 +187,7 @@ export function AppShell({
               className="top-bar__menu"
               aria-label="เปิดเมนู"
               type="button"
-              onClick={() => setSidebarOpen(true)}
+              onClick={handleMenuClick}
             >
               <span className="top-bar__menu-icon">
                 <MenuIcon size={22} />
@@ -171,7 +204,9 @@ export function AppShell({
             </button>
           )}
         </div>
-        <div className="top-bar__title">{displayTitle}</div>
+        <div className="top-bar__title" ref={titleRef}>
+          {displayTitle}
+        </div>
         <div className="top-bar__right">
           <Link
             href="/profile"

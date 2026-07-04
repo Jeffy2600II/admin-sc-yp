@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai, Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/framework/toast-provider";
+import { ToastProvider } from "@/components/framework/toast-provider";
 import { BottomSheetProvider } from "@/components/framework/bottom-sheet";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -53,10 +53,11 @@ export default function RootLayout({
       <body
         className={`${notoSansThai.variable} ${inter.variable} antialiased`}
       >
-        <BottomSheetProvider>
-          {children}
-          <Toaster />
-        </BottomSheetProvider>
+        <ToastProvider>
+          <BottomSheetProvider>
+            {children}
+          </BottomSheetProvider>
+        </ToastProvider>
       </body>
     </html>
   );

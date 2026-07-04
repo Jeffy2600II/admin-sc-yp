@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * YP ADMIN · ROOT PAGE (v1.2)
+ *
+ * Redirects to /dashboard if authenticated, /login otherwise.
+ * Uses the demo's .loading-screen class for the initial state.
+ */
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getBrowserClient } from "@/lib/supabase/client";
@@ -26,36 +32,11 @@ export default function RootPage() {
   }, [router]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "var(--yp-gradient-hero)",
-        color: "white",
-      }}
-    >
-      <div style={{ textAlign: "center" }}>
-        <div
-          style={{
-            width: 60,
-            height: 60,
-            borderRadius: 28,
-            background: "rgba(255,255,255,0.18)",
-            border: "1px solid rgba(255,255,255,0.35)",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 20,
-            fontWeight: 800,
-            margin: "0 auto 12px",
-          }}
-        >
-          YP
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 700 }}>YP Admin</div>
-        <div style={{ fontSize: 14, opacity: 0.78, marginTop: 4 }}>
-          กำลังเตรียมพื้นที่…
-        </div>
+    <div className="loading-screen" style={{ opacity: 1 }}>
+      <div className="loading-screen__inner">
+        <div className="loading-screen__logo">YP</div>
+        <div className="loading-screen__title">YP Admin</div>
+        <div className="loading-screen__subtitle">กำลังเตรียมพื้นที่…</div>
       </div>
     </div>
   );

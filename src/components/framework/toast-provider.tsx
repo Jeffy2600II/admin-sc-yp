@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * YP ADMIN · TOAST PROVIDER (v1.2 — fixed context bug)
+ *
+ * v1.2 FIX: Split Toaster into ToastProvider (wraps children with context)
+ * and Toaster (renders the toast stack via portal). Previously the provider
+ * was a sibling of children, so useToast() in children silently returned
+ * a no-op fallback and toasts never displayed.
+ *
+ * Ported from ypadmin-demo-v1.5 core/ui.js toast system.
+ */
 import React, {
   createContext,
   useCallback,
@@ -25,10 +35,10 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-export function useToast() {
+export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Fallback: no-op (avoids crash when used outside provider)
+    // Fallback: no-op (avoids crash when used outside provider, e.g. during SSR)
     return { toast: () => {} };
   }
   return ctx;
@@ -40,7 +50,11 @@ const ICONS: Record<ToastType, React.ReactNode> = {
   info: <InfoIcon size={16} />,
 };
 
-export function Toaster() {
+/**
+ * ToastProvider — wraps the app tree and exposes `useToast()` to all children.
+ * Must be placed ABOVE any component that calls useToast().
+ */
+export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [mounted, setMounted] = useState(false);
   const idRef = useRef(0);
@@ -54,6 +68,7 @@ export function Toaster() {
       const id = ++idRef.current;
       setToasts((prev) => [...prev, { id, message, type, leaving: false }]);
 
+      // Trigger leave transition before removal
       setTimeout(() => {
         setToasts((prev) =>
           prev.map((t) => (t.id === id ? { ...t, leaving: true } : t))
@@ -66,17 +81,17 @@ export function Toaster() {
     []
   );
 
-  // Expose toast via context — but Toaster itself is the provider
   return (
     <ToastContext.Provider value={{ toast }}>
-      <ToastConsumer />
+      {children}
       {mounted &&
         createPortal(
-          <div className="toast-stack">
+          <div className="toast-stack" aria-live="polite" aria-atomic="true">
             {toasts.map((t) => (
               <div
                 key={t.id}
                 className={`toast toast--${t.type} ${t.leaving ? "is-leaving" : ""}`}
+                role="status"
               >
                 {ICONS[t.type]}
                 <span>{t.message}</span>
@@ -89,15 +104,14 @@ export function Toaster() {
   );
 }
 
-/** Empty consumer — exists so that children can useToast() within the provider tree. */
-function ToastConsumer() {
+/**
+ * Backward-compatible Toaster export — renders nothing now, the portal is
+ * handled inside ToastProvider. Kept so existing imports (if any) don't break.
+ *
+ * @deprecated Use <ToastProvider> directly instead.
+ */
+export function Toaster() {
   return null;
 }
 
-/**
- * Hook to programmatically show a toast from anywhere within the Toaster tree.
- * Usage:
- *   const { toast } = useToast();
- *   toast("บันทึกสำเร็จ", "success");
- */
 export { ToastContext };

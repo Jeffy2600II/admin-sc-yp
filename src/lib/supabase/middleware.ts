@@ -4,25 +4,57 @@ import type { NextRequest } from "next/server";
 import type { Database } from "@/lib/types/database";
 
 /**
- * Refresh Supabase auth session on every request.
- * Call this from middleware.ts to keep cookies fresh.
+ * YP ADMIN · SUPABASE MIDDLEWARE (v1.2)
  *
- * Returns the authenticated user (or null) so middleware can
- * enforce route protection server-side.
+ * Refreshes the Supabase auth session on every request and returns the
+ * authenticated user (or null) so middleware.ts can enforce route protection.
  *
- * If env vars are missing (e.g., during local preview without setup),
- * this gracefully skips the session refresh instead of crashing.
+ * v1.2 improvements (ported from ypwork pattern):
+ * - Supports both NEXT_PUBLIC_SUPABASE_ANON_KEY (legacy) and
+ *   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (Vercel × Supabase integration)
+ * - Supports both SUPABASE_URL and NEXT_PUBLIC_SUPABASE_URL env var names
+ * - Throws a clear error if env vars are missing (instead of silent failure)
+ * - Graceful skip if env vars are not configured (for local preview)
  */
+
+function getSupabaseUrl(): string {
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL;
+  if (!url) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) is not set. Please connect Supabase × Vercel integration or set the env var manually."
+    );
+  }
+  return url;
+}
+
+function getSupabaseAnonKey(): string {
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY;
+  if (!key) {
+    throw new Error(
+      "Supabase anon/publishable key is not set. Please set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (Vercel integration) or NEXT_PUBLIC_SUPABASE_ANON_KEY (legacy)."
+    );
+  }
+  return key;
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Graceful skip if env vars aren't configured
-  if (!supabaseUrl || !supabaseKey) {
+  let supabaseUrl: string;
+  let supabaseKey: string;
+  try {
+    supabaseUrl = getSupabaseUrl();
+    supabaseKey = getSupabaseAnonKey();
+  } catch (e) {
+    // Env vars not configured — graceful skip (e.g. local preview without setup)
     return { response, supabase: null, user: null };
   }
 

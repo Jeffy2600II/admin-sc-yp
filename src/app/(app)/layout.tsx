@@ -1,5 +1,14 @@
 "use client";
 
+/**
+ * YP ADMIN · APP LAYOUT (v1.2)
+ *
+ * Wraps all authenticated pages with AuthProvider + AppShell.
+ * Uses the demo's .loading-screen class for the initial loading state
+ * (with proper fade-out animation defined in pages.css).
+ *
+ * Route meta is computed inline (replaces the demo's route-meta.js).
+ */
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
@@ -57,7 +66,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     return ROUTE_META[pathname] || { title: "YP Admin", activeNav: null, showFAB: false, showBack: false };
   })();
 
-  // FAB click → navigate based on route
+  // FAB click → dispatch event that views can listen for
   const handleFABClick = () => {
     if (pathname === "/departments") {
       window.dispatchEvent(new CustomEvent("ypadmin-fab", { detail: "departments" }));
@@ -68,40 +77,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ── Loading state ──
+  // ── Loading state — uses the demo's .loading-screen class ──
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          background: "var(--yp-gradient-hero)",
-          color: "white",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 28,
-              background: "rgba(255,255,255,0.18)",
-              border: "1px solid rgba(255,255,255,0.35)",
-              display: "grid",
-              placeItems: "center",
-              fontSize: 20,
-              fontWeight: 800,
-              margin: "0 auto 12px",
-              animation: "yp-pulse 1.6s ease-in-out infinite",
-            }}
-          >
-            YP
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>YP Admin</div>
-          <div style={{ fontSize: 14, opacity: 0.78, marginTop: 4 }}>
-            กำลังเตรียมพื้นที่…
-          </div>
+      <div className="loading-screen" style={{ opacity: 1 }}>
+        <div className="loading-screen__inner">
+          <div className="loading-screen__logo">YP</div>
+          <div className="loading-screen__title">YP Admin</div>
+          <div className="loading-screen__subtitle">กำลังเตรียมพื้นที่…</div>
         </div>
       </div>
     );

@@ -1,9 +1,23 @@
 "use client";
 
+/**
+ * YP ADMIN · LOGIN PAGE (v1.2)
+ *
+ * Improvements over v1.1:
+ * - Uses getSafeRedirect() with open-redirect protection (ypwork pattern)
+ * - Clears redirect-loop markers after successful login
+ * - Cleaner redirect flow (matches demo + ypwork)
+ * - Better error feedback
+ */
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { loginStudent, loginOther, getCurrentSessionUser } from "@/lib/auth/login";
+import {
+  getSafeRedirect,
+  clearRedirectMarkers,
+  wasRecentlyRedirected,
+} from "@/lib/auth/redirect";
 import { useToast } from "@/components/framework/toast-provider";
 import { IdCardIcon, UserIcon, MailIcon } from "@/lib/icons";
 
@@ -19,8 +33,10 @@ function LoginPageInner() {
   const [mode, setMode] = useState<LoginMode>("student");
   const [loading, setLoading] = useState(false);
 
-  // Where to redirect after successful login (set by middleware)
-  const redirectPath = searchParams.get("redirect") || "/dashboard";
+  // Where to redirect after successful login — validated for safety
+  const redirectPath = getSafeRedirect(
+    searchParams.get("redirect") || "/dashboard"
+  );
 
   const navigateAfterLogin = () => {
     router.replace(redirectPath);
@@ -42,8 +58,14 @@ function LoginPageInner() {
       const supabase = getBrowserClient();
       const user = await getCurrentSessionUser(supabase);
       if (mounted && user) {
-        // Already logged in → go to intended destination or dashboard
-        router.replace(redirectPath);
+        // Already logged in → go to intended destination or dashboard.
+        // If we detect a recent redirect, log out to break the loop
+        // (matches demo's last-login-redirect logic).
+        if (wasRecentlyRedirected()) {
+          await supabase.auth.signOut();
+        } else {
+          router.replace(redirectPath);
+        }
       }
     })();
     return () => {
@@ -85,6 +107,8 @@ function LoginPageInner() {
       }
       return;
     }
+    // Clear redirect-loop markers so a fresh session doesn't trigger loop detection
+    clearRedirectMarkers();
     toast(`สวัสดี ${result.user?.name}`, "success");
     setTimeout(() => navigateAfterLogin(), 400);
   };
@@ -111,6 +135,7 @@ function LoginPageInner() {
       }
       return;
     }
+    clearRedirectMarkers();
     toast(`สวัสดี ${result.user?.name}`, "success");
     setTimeout(() => navigateAfterLogin(), 400);
   };
@@ -198,6 +223,7 @@ function LoginPageInner() {
                     autoComplete="off"
                     value={nationalId}
                     onChange={handleNidChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="field__error">เลขบัตรประชาชนต้องมี 13 หลัก</div>
@@ -221,6 +247,7 @@ function LoginPageInner() {
                     autoComplete="off"
                     value={studentCode}
                     onChange={handleScChange}
+                    disabled={loading}
                   />
                 </div>
                 <div className="field__error">รหัสนักเรียนต้องมี 5 หลัก</div>
@@ -259,6 +286,7 @@ function LoginPageInner() {
                       setEmail(e.target.value);
                       setEmailError(false);
                     }}
+                    disabled={loading}
                   />
                 </div>
                 <div className="field__error">รูปแบบอีเมลไม่ถูกต้อง</div>
@@ -286,6 +314,7 @@ function LoginPageInner() {
                       setPassword(e.target.value);
                       setPwdError(false);
                     }}
+                    disabled={loading}
                   />
                 </div>
                 <div className="field__error">รหัสผ่านต้องไม่น้อยกว่า 6 ตัว</div>
@@ -304,7 +333,7 @@ function LoginPageInner() {
         </div>
 
         <div className="login__footer">
-          © 2026 YP Admin v1.1 · เฉพาะผู้ดูแลระบบเท่านั้น · เชื่อมต่อกับ Supabase
+          © 2026 YP Admin v1.2 · เฉพาะผู้ดูแลระบบเท่านั้น · เชื่อมต่อกับ Supabase
         </div>
       </div>
     </div>

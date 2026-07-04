@@ -1,4 +1,4 @@
-# YP Admin v1.0
+# YP Admin v1.2
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -166,6 +166,30 @@ INSERT INTO public.council_users (
 
 ---
 
+## การปรับปรุงใน v1.2
+
+### Bug Fixes (Critical)
+- **Toast Provider bug** — แก้ไข `ToastProvider` ที่วางผิดตำแหน่ง (เป็น sibling ของ children) ทำให้ `useToast()` ในทุกหน้าคืนค่า no-op fallback และ toast ไม่แสดงผล → แยก `ToastProvider` (wraps children) จาก toast rendering (portal) ทำให้ toast ทำงานได้ทุกหน้า
+- **Loading screen** — เปลี่ยนจาก inline styles ไปใช้ `.loading-screen` class ของ demo ที่มี fade-out animation ครบถ้วน (logo pulse + title + subtitle)
+
+### New Features (จาก demo + ypwork)
+- **Title Swap Animation** — เมื่อ route เปลี่ยน หัวเรื่องใน top-bar จะมี animation `yp-title-swap` (fade + slight move) ตรงกับ demo 100%
+- **Perf Controller** — IntersectionObserver ตรวจหา hero blocks ที่ออกจาก viewport แล้ว pause background animations (`.yp-pause-bg`) ประหยัด CPU/GPU เมื่อ hero ไม่ visible (port จาก `demo/framework/perf-controller.js`)
+- **Open-redirect protection** — `getSafeRedirect()` ตรวจสอบว่า redirect param เป็น relative path เท่านั้น (ป้องกัน `//evil.com` และ `/\evil.com`) อิงจาก ypwork pattern
+- **Redirect loop prevention** — `wasRecentlyRedirected()` + `clearRedirectMarkers()` ป้องกันลูปการ redirect ระหว่าง /login และ /dashboard เมื่อ session มีปัญหา
+
+### Improvements
+- **Middleware** — รองรับ env vars หลายชื่อ (`NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`) อิงจาก ypwork pattern; graceful skip เมื่อ env ไม่ได้ตั้งค่า
+- **AppShell** — เพิ่ม `yp-sidebar-open` body class ตอน sidebar เปิด (ตรงกับ demo CSS ที่ซ่อน FAB); ใช้ `usePerfController` hook
+- **Login page** — ใช้ `getSafeRedirect()` สำหรับ redirect หลัง login; ตรวจจับ redirect loop และ sign out ถ้าตรวจพบ
+- **Footer / version labels** — อัปเดตเป็น v1.2 ทุกจุด
+
+### Cleanup
+- ลบ `bottom-sheet-provider.tsx` (unused wrapper — `BottomSheetProvider` ใช้ตรงจาก `bottom-sheet.tsx` แล้ว)
+- โครงสร้าง CSS ยังคงเหมือน demo 100% (verified: `diff -q demo/assets/css admin-sc-yp/src/styles` ไม่มี output)
+
+---
+
 ## Routes
 
 | Path | Page | Sidebar | FAB |
@@ -194,4 +218,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.0
+© 2026 YP Admin · v1.2
