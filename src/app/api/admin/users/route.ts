@@ -61,21 +61,24 @@ export async function POST(request: NextRequest) {
     let authEmail: string;
     let authPassword: string;
 
-    // v1.6: accept an explicit password from the request body (admin-set).
-    // Fall back to legacy patterns if not provided.
-    const bodyPassword: string | undefined = body.password;
-
+    // v1.9.4 CRITICAL FIX: Match yplabs EXACTLY.
+    // - Student: email = synthesizeEmail(student_id), password = student_id (raw, no pad)
+    // - Teacher/other: email = req.email, password = req.password (raw, pad if <6)
+    //
+    // The login flow uses student_id as the password for students, so we
+    // MUST create the auth account with student_id as the password.
+    // Do NOT use body.password for students — login doesn't know about it.
+    // Do NOT pad student_id — yplabs creates with raw 5-char and it works.
     if (acctType === "student" && studentId) {
       authEmail = synthesizeStudentEmail(studentId);
-      authPassword = bodyPassword || studentId;
+      authPassword = studentId; // v1.9.4: ALWAYS student_id, no body.password, no pad
     } else {
       authEmail = email || `${fullName.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
-      authPassword = bodyPassword || "123456";
-    }
-
-    // Guard: password must be at least 6 chars (Supabase Auth minimum)
-    if (authPassword.length < 6) {
-      authPassword = authPassword.padEnd(6, "0");
+      authPassword = body.password || "123456";
+      // v1.9.4: Only pad for non-student accounts
+      if (authPassword.length < 6) {
+        authPassword = authPassword.padEnd(6, "0");
+      }
     }
 
     // 1. Create Supabase Auth user

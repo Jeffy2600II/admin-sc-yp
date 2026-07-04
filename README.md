@@ -1,4 +1,4 @@
-# YP Admin v1.9.3
+# YP Admin v1.9.4
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -163,6 +163,38 @@ INSERT INTO public.council_users (
 - **Mobile-first responsive** (iPhone 14 → desktop)
 - **PWA-ready** (manifest + icons)
 - **Sky Blue + Cyan accent** บนพื้นขาวสะอาด
+
+---
+
+## การปรับปรุงใน v1.9.4 (Critical Fix — Password ตรงกับ Login Flow)
+
+### Bug Fixes (Critical — แก้ไข "Invalid login credentials" สำหรับบัญชีใหม่)
+- **Password ไม่ตรงกับ login flow** — ปัญหาหลัก: ระบบสร้างบัญชีนักเรียนด้วย password ที่ไม่ตรงกับที่ login ใช้:
+  - v1.9.3 ใช้ `req.password || student_id` แล้ว pad ด้วย "0" ถ้าสั้นกว่า 6 ตัว
+  - login flow (ypwork + yplabs) ใช้ `student_id` (5 หลัก) เป็น password โดยตรง
+  - ผล: "00000" ถูก pad เป็น "000000" → login ใช้ "00000" → ไม่ตรง → "Invalid login credentials"
+- **แก้ไข (match yplabs EXACTLY)**:
+  - **นักเรียน**: `password = student_id` (raw, ไม่ pad, ไม่ใช้ req.password)
+  - **ครู/อื่นๆ**: `password = req.password` (pad ถ้าสั้นกว่า 6 ตัว เฉพาะ non-student)
+- ตอนนี้บัญชีนักเรียนที่สร้างใหม่จะ login ได้เหมือนบัญชีเก่าที่สร้างด้วย yplabs
+
+### ยืนยันจาก yplabs (ระบบที่ใช้งานจริง)
+```javascript
+// yplabs/src/app/api/admin/requests/route.ts
+if (req_row.account_type === 'student') {
+  authEmail = synthesizeEmail(req_row.student_id);
+  authPassword = req_row.student_id;  // ← ใช้ student_id โดยตรง, ไม่ pad
+} else {
+  authEmail = req_row.email;
+  authPassword = Math.random().toString(36).slice(2, 10);
+}
+```
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- นักเรียน: password = student_id (5 หลัก, ไม่ pad) → login ใช้ student_id → ตรง
+- ครู/อื่นๆ: password = req.password (pad ถ้า <6) → login ใช้ req.password → ตรง
+- ไม่มี `user_metadata` (เหมือน v1.9.3)
 
 ---
 
@@ -589,4 +621,4 @@ confirmDestructive(opts) → Promise<boolean>
 
 ---
 
-© 2026 YP Admin · v1.9.3
+© 2026 YP Admin · v1.9.4

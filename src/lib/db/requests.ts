@@ -81,29 +81,38 @@ export async function approveRequest(
 
   // 2. Determine email and password
   //
-  // v1.6: Use the password from the join_requests row if available (the
-  // real schema has a `password` column that the applicant set when
-  // submitting). Fall back to student_id (legacy yplabs pattern) only if
-  // the password column is empty.
+  // v1.9.4 CRITICAL FIX: Match yplabs EXACTLY.
+  // - Student: email = synthesizeEmail(student_id), password = student_id (raw, no pad)
+  // - Teacher/other: email = req.email, password = req.password (raw)
+  //
+  // The login flow (ypwork + yplabs) uses:
+  //   student: signIn(email = student_<code>@yplabs.internal, password = student_code)
+  //   teacher: signIn(email = real_email, password = real_password)
+  //
+  // Previously we used `req.password || student_id` and padded to 6 chars,
+  // which broke student login because:
+  //   1. req.password might be set (different from student_id) → mismatch
+  //   2. padding "00000" → "000000" → mismatch with login's "00000"
+  //
+  // Now we use student_id directly (no padding, no fallback to req.password)
+  // for student accounts, matching yplabs behavior exactly.
   let email: string;
   let password: string;
 
   if (req.account_type === "student" && req.student_id) {
     email = synthesizeStudentEmail(req.student_id);
-    // v1.6: prefer the applicant-set password from join_requests
-    password = req.password || req.student_id;
+    // v1.9.4: ALWAYS use student_id as password (matches login flow).
+    // Do NOT use req.password — login doesn't know about it.
+    // Do NOT pad — yplabs creates with raw 5-char student_id and it works.
+    password = req.student_id;
   } else {
-    email =
-      req.email ||
-      `${req.full_name.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
-    // v1.6: prefer the applicant-set password, fall back to default
+    // Teacher/other: use email + password from the request
+    email = req.email || `${req.full_name.replace(/\s+/g, ".").toLowerCase()}@yplabs.internal`;
     password = req.password || "123456";
-  }
-
-  // Guard: password must be at least 6 chars (Supabase Auth minimum)
-  if (password.length < 6) {
-    // Pad with zeros to reach 6 chars (preserves the original intent)
-    password = password.padEnd(6, "0");
+    // v1.9.4: Only pad for non-student accounts (student_id is used as-is)
+    if (password.length < 6) {
+      password = password.padEnd(6, "0");
+    }
   }
 
   // 3. Create Supabase Auth user (adminClient — bypasses RLS)
