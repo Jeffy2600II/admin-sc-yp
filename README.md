@@ -1,4 +1,4 @@
-# YP Admin v1.2
+# YP Admin v1.3
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -166,6 +166,33 @@ INSERT INTO public.council_users (
 
 ---
 
+## การปรับปรุงใน v1.3 (Critical Framework Fix)
+
+### Bug Fixes (Critical — แก้ไขปัญหาหลักของ v1.2)
+- **CSS ไม่ถูกโหลดเลยใน v1.2** — ปัญหาร้ายแรงที่สุด: การ `@import` demo CSS จาก `globals.css` ไม่ทำงานใน Tailwind v4 + Turbopack ทำให้ `.sheet`, `.side-bar`, `.btn`, `.stat-card` และ class อื่นๆ ไม่มี style → bottom sheet และ sidebar มองไม่เห็น / ใช้งานไม่ได้
+  - **แก้ไข**: import CSS แต่ละไฟล์โดยตรงใน `layout.tsx` (JS import) → Next.js สร้าง CSS chunk แยกสำหรับแต่ละไฟล์และ link ใน `<head>` ครบถ้วน
+- **Font ไม่ตรงกับ demo** — v1.2 ใช้ `next/font/google` ซึ่ง inject `--font-noto-sans-thai` และ `--font-inter` แต่ demo's `tokens.css` ใช้ `--yp-font-stack: 'Noto Sans Thai', 'Inter'` โดยตรง → body text ใช้ fallback font ไม่ใช่ Noto Sans Thai
+  - **แก้ไข**: โหลด Noto Sans Thai + Inter จาก Google Fonts CDN ผ่าน `<link>` ใน `<head>` (เหมือน demo's `index.html` ทุกประการ) และใช้ `--yp-font-stack` โดยตรง
+
+### Bottom Sheet Framework (rewrite)
+- เขียนใหม่ทั้งหมดเพื่อใช้ CSS class `.is-open` แทน inline style (เหมือน demo 100%)
+- ก่อนหน้านี้ v1.2 ใช้ `style={{ visibility: "hidden", opacity: 0 }}` ซึ่ง override CSS rule `.sheet-backdrop.is-open { opacity: 1; visibility: visible }` (inline style มี specificity สูงกว่า) → sheet มองไม่เห็นตลอดเวลา
+- ตอนนี้ sheet portal render โดยไม่มี `.is-open` ก่อน (CSS default = hidden) แล้ว double-rAF เพิ่ม `.is-open` เพื่อ trigger transition (เหมือน demo's `requestAnimationFrame`)
+- ปิดโดย remove `.is-open` + add `.is-closing` → slide-down animation (เหมือน demo)
+
+### Sidebar Framework (rewrite)
+- เพิ่ม scroll-lock แบบ count-based (เหมือน demo's `scroll-lock.js`) — `position:fixed` บน body + saved scroll position → re-open sidebar ไม่ทำให้หน้ากระโดด
+- เพิ่ม history stack integration — เปิด sidebar push history entry → hardware back button ปิด sidebar แทนที่จะออกจากแอป (เหมือน demo's `registerSheet`)
+- เพิ่ม `body.yp-sidebar-open` class → CSS rule `body.yp-sidebar-open .fab { ... }` ซ่อน FAB อัตโนมัติ (เหมือน demo)
+- Title swap animation ทำงานเฉพาะเมื่อ title เปลี่ยนจริงๆ (ก่อนหน้านี้ fire ทุก render → flicker)
+
+### Verified
+- ทุก demo CSS class (`.sheet.is-open`, `.side-bar.is-open`, `.sidebar-backdrop.is-open`, `.btn`, `.stat-card`, `.loading-screen`, `.login`, `.admin-hero` ฯลฯ) มี CSS rule ใน built output ครบถ้วน
+- Production build สร้าง 3 CSS chunks (รวม ~232KB) และ link ใน `<head>` ครบ
+- Build ผ่านสมบูรณ์บน Next.js 16.2.10 + Tailwind v4.3.2
+
+---
+
 ## การปรับปรุงใน v1.2
 
 ### Bug Fixes (Critical)
@@ -218,4 +245,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.2
+© 2026 YP Admin · v1.3

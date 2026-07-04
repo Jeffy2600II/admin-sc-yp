@@ -1,5 +1,25 @@
 "use client";
 
+/**
+ * YP ADMIN · BOTTOM SHEET SYSTEM (v1.3 — complete rewrite)
+ *
+ * This is a faithful port of ypadmin-demo-v1.5 framework/bottom-sheet.js (v7.7).
+ *
+ * Key v1.3 fixes (vs v1.2):
+ * - Uses CSS class `.is-open` on backdrop+sheet to drive visibility/opacity
+ *   (matches demo's CSS exactly — no inline style overrides that break specificity)
+ * - Backdrop and sheet start in their "hidden" state (CSS default), then get
+ *   `.is-open` added on the next frame to trigger the open animation
+ * - Sheet starts translated 100% down (CSS default), `.is-open` slides it up
+ * - Removed broken inline-style visibility/opacity logic that left sheets
+ *   permanently invisible
+ * - Refactored SheetPortal to use proper React state for mount/open phases
+ * - Body class `yp-sheet-open` / `yp-sheet-popup` toggled on open/close
+ *   (matches demo's scroll-lock + popup-mode CSS hooks)
+ *
+ * Source: demo/assets/js/framework/bottom-sheet.js
+ * CSS:    src/styles/framework/bottom-sheet.css (identical to demo)
+ */
 import React, {
   createContext,
   useCallback,
@@ -9,16 +29,6 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-
-/* ═══════════════════════════════════════════════════════════════
-   YP ADMIN · BOTTOM SHEET SYSTEM (React/TS port of v7.7)
-   ───────────────────────────────────────────────────────────────
-   - Drag-to-dismiss (pointer events, velocity-based)
-   - Stack (open multiple sheets)
-   - History stack (back button / ESC closes top sheet)
-   - Scroll-lock (body scroll locked while sheet open)
-   - Popup mode (≥768px: centered modal)
-   ═══════════════════════════════════════════════════════════════ */
 
 const SHEET_BASE_Z = 18000;
 const POPUP_MODE_MQ = "(min-width: 768px)";
@@ -249,7 +259,7 @@ export function BottomSheetProvider({
     const doClose = () => {
       if (controller.closed) return;
       controller.closed = true;
-      // Start close animation
+      // Start close animation by removing .is-open + adding .is-closing
       const sheetEl = controller.sheet;
       const backdropEl = controller.backdrop;
       if (backdropEl) backdropEl.style.pointerEvents = "none";
@@ -264,12 +274,11 @@ export function BottomSheetProvider({
           });
         });
       }
-      // Remove after animation
+      // Remove from React tree after the close animation finishes
       setTimeout(() => {
         setSheets((prev) => prev.filter((s) => s.id !== id));
         unlockScroll();
-        const openCount = _sheetStack.length;
-        if (openCount === 0) {
+        if (_sheetStack.length === 0) {
           document.body.classList.remove("yp-sheet-open", "yp-sheet-popup");
         }
         opts.onClose?.();
@@ -329,7 +338,18 @@ export function BottomSheetProvider({
   );
 }
 
-/* ── Single sheet portal ── */
+/* ── Single sheet portal ──
+ *
+ * v1.3 KEY FIX:
+ * - We no longer set inline `visibility` / `opacity` on the backdrop.
+ *   Those would override the CSS rules (`.sheet-backdrop.is-open { ... }`)
+ *   and break the open animation.
+ * - Instead, the sheet portal renders with NO open class initially, then
+ *   a double-rAF later we add `.is-open` to both backdrop and sheet.
+ *   This lets CSS drive the transition (the demo's approach).
+ * - On close we remove `.is-open` and add `.is-closing` (sheet only),
+ *   which triggers the slide-down animation. After 360ms we unmount.
+ */
 function SheetPortal({ state }: { state: SheetState }) {
   const { id, options, controller } = state;
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -337,26 +357,26 @@ function SheetPortal({ state }: { state: SheetState }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<any>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [openPhase, setOpenPhase] = useState<"hidden" | "open">("hidden");
 
-  // Wire controller refs
-  controller.backdrop = backdropRef.current;
-  controller.sheet = sheetRef.current;
-  controller.bodyEl = bodyRef.current;
-  controller.footerEl = footerRef.current;
-
-  // Open animation
+  // Phase 1: mount (renders with no .is-open). Phase 2: next two rAFs → add .is-open.
   useEffect(() => {
     const raf1 = requestAnimationFrame(() => {
       const raf2 = requestAnimationFrame(() => {
-        setIsOpen(true);
+        setOpenPhase("open");
       });
       return () => cancelAnimationFrame(raf2);
     });
     return () => cancelAnimationFrame(raf1);
   }, []);
 
-  // Wire controller methods that need refs
+  // Wire controller refs after every render so they're always current
+  controller.backdrop = backdropRef.current;
+  controller.sheet = sheetRef.current;
+  controller.bodyEl = bodyRef.current;
+  controller.footerEl = footerRef.current;
+
+  // Wire controller methods that need refs (runs after mount)
   useEffect(() => {
     controller.backdrop = backdropRef.current;
     controller.sheet = sheetRef.current;
@@ -364,14 +384,12 @@ function SheetPortal({ state }: { state: SheetState }) {
     controller.footerEl = footerRef.current;
 
     controller.patch = (newBody: React.ReactNode) => {
-      // React handles re-render via state; for simplicity we re-render via force update
-      // The body is rendered from state.options.body, so patching requires a different mechanism
-      // For now, callers should use React state in their parent component
+      // React handles re-render via state in the parent component.
+      // For static bodies, callers should close+reopen the sheet.
       void newBody;
     };
 
     controller.setTitle = (newTitle: string) => {
-      // Update title via DOM (simplest)
       if (sheetRef.current) {
         const titleEl = sheetRef.current.querySelector(".sheet__title");
         if (titleEl) titleEl.textContent = newTitle;
@@ -623,18 +641,13 @@ function SheetPortal({ state }: { state: SheetState }) {
   const sizeClass = `sheet--${options.size || "auto"}`;
   const dismissable = options.dismissable !== false;
   const hasFooter = options.footer != null;
+  const isOpen = openPhase === "open";
 
   return (
     <div
-      className="sheet-backdrop"
+      className={`sheet-backdrop ${isOpen ? "is-open" : ""}`}
       ref={backdropRef}
-      style={
-        {
-          "--sheet-z": z,
-          opacity: isOpen ? undefined : 0,
-          visibility: isOpen ? "visible" : "hidden",
-        } as React.CSSProperties
-      }
+      style={{ "--sheet-z": z } as React.CSSProperties}
       data-sheet-z={z}
       onClick={handleBackdropClick}
     >

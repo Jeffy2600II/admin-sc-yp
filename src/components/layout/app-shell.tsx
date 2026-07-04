@@ -4,11 +4,18 @@
  * App shell — top-bar + side-bar + FAB + main content slot.
  * Ported from ypadmin-demo-v1.5 framework/app-shell.js (v1.3 sidebar design).
  *
- * v1.2 improvements:
- * - Title swap animation (matches demo's setTitleWithSwap behavior)
- * - Perf controller integration (pauses hero animations when off-screen)
- * - Better sidebar scroll-lock with body class (matches demo)
- * - Cleaner transition end handling
+ * v1.3 fixes (vs v1.2):
+ * - Title swap animation now only fires when the title actually changes
+ *   (previously it fired on every render even if title stayed the same,
+ *    causing a subtle flicker on unrelated re-renders)
+ * - Sidebar scroll-lock uses the same count-based lockScroll approach as
+ *   the demo's scroll-lock.js (position:fixed on body + saved scroll pos),
+ *   so re-opening the sidebar after closing doesn't jump the page
+ * - Added browser back-button integration: opening the sidebar pushes a
+ *   history entry so hardware back closes the sidebar instead of leaving
+ *   the app (matches demo's registerSheet pattern)
+ * - Body gets `yp-sidebar-open` class (matches demo CSS hooks for hiding FAB)
+ * - FAB is hidden via CSS (body.yp-sidebar-open .fab) instead of React state
  */
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -94,6 +101,82 @@ interface AppShellProps {
   accentTitle?: string;
 }
 
+/* ── Lightweight scroll-lock (matches demo's scroll-lock.js) ──
+ * Count-based so multiple locks (sidebar + sheet) don't fight each other. */
+let _lockCount = 0;
+let _savedScrollY = 0;
+let _savedScrollX = 0;
+let _savedBodyCss = "";
+
+function lockScroll() {
+  _lockCount++;
+  if (_lockCount !== 1) return;
+  if (typeof document === "undefined") return;
+
+  const html = document.documentElement;
+  const body = document.body;
+  _savedScrollY = window.scrollY || window.pageYOffset || 0;
+  _savedScrollX = window.scrollX || window.pageXOffset || 0;
+  _savedBodyCss = body.getAttribute("style") || "";
+
+  const scrollbarWidth = window.innerWidth - html.clientWidth;
+  html.style.overflow = "hidden";
+  html.style.overscrollBehavior = "none";
+  html.style.marginRight = scrollbarWidth > 0 ? scrollbarWidth + "px" : "";
+
+  body.style.position = "fixed";
+  body.style.top = "-" + _savedScrollY + "px";
+  body.style.left = "0";
+  body.style.right = "0";
+  body.style.bottom = "0";
+  body.style.width = "100%";
+  body.style.overflow = "hidden";
+  body.style.overscrollBehavior = "none";
+}
+
+function unlockScroll() {
+  _lockCount = Math.max(0, _lockCount - 1);
+  if (_lockCount !== 0) return;
+  if (typeof document === "undefined") return;
+
+  const html = document.documentElement;
+  const body = document.body;
+  if (_savedBodyCss) body.setAttribute("style", _savedBodyCss);
+  else body.removeAttribute("style");
+  html.style.overflow = "";
+  html.style.overscrollBehavior = "";
+  html.style.marginRight = "";
+
+  html.style.scrollBehavior = "auto";
+  window.scrollTo(_savedScrollX, _savedScrollY);
+  requestAnimationFrame(() => {
+    html.style.scrollBehavior = "";
+  });
+}
+
+/* ── Sidebar history integration ──
+ * When the sidebar opens, we push a history entry so the hardware back
+ * button closes the sidebar instead of leaving the app. */
+const SIDEBAR_MARKER = "__yp_sidebar";
+let _sidebarOpen = false;
+let _sidebarHistoryPushed = false;
+
+function _onPopState() {
+  if (typeof window === "undefined") return;
+  if (!_sidebarOpen) return;
+  // Hardware back was pressed while sidebar was open — close it.
+  _sidebarOpen = false;
+  _sidebarHistoryPushed = false;
+  document.body.classList.remove("yp-sidebar-open");
+  unlockScroll();
+  // Tell React to update its state
+  window.dispatchEvent(new CustomEvent("yp-sidebar-close"));
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", _onPopState);
+}
+
 export function AppShell({
   user,
   children,
@@ -109,6 +192,7 @@ export function AppShell({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
+  const prevTitleRef = useRef<string>("");
 
   // Initialize performance controller (pauses hero animations off-screen)
   usePerfController();
@@ -125,9 +209,12 @@ export function AppShell({
   const displayTitle = accentTitle || title;
 
   // ── Title swap animation (matches demo's setTitleWithSwap) ──
+  // Only trigger when the title actually changes.
   useEffect(() => {
     const titleEl = titleRef.current;
     if (!titleEl) return;
+    if (prevTitleRef.current === displayTitle) return;
+    prevTitleRef.current = displayTitle;
     // Remove swapping class, force reflow, then re-add to restart animation
     titleEl.classList.remove("is-swapping");
     void titleEl.offsetWidth; // force reflow
@@ -138,45 +225,87 @@ export function AppShell({
     return () => clearTimeout(timer);
   }, [displayTitle]);
 
-  // Lock body scroll when sidebar open (matches demo's yp-sidebar-open body class)
-  useEffect(() => {
-    if (sidebarOpen) {
-      document.body.classList.add("yp-sidebar-open");
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.classList.remove("yp-sidebar-open");
-      document.body.style.overflow = "";
+  // ── Sidebar open/close with scroll-lock + history ──
+  const openSidebar = useCallback(() => {
+    if (_sidebarOpen) return;
+    _sidebarOpen = true;
+    setSidebarOpen(true);
+    document.body.classList.add("yp-sidebar-open");
+    lockScroll();
+    // Push history entry so hardware back closes sidebar
+    if (typeof window !== "undefined" && !_sidebarHistoryPushed) {
+      try {
+        const state = (window.history.state || {}) as Record<string, unknown>;
+        if (state[SIDEBAR_MARKER]) {
+          // Already a sidebar state in history — replace it
+          window.history.replaceState(
+            { ...state, [SIDEBAR_MARKER]: true },
+            "",
+            window.location.href
+          );
+        } else {
+          window.history.pushState(
+            { ...state, [SIDEBAR_MARKER]: true },
+            "",
+            window.location.href
+          );
+        }
+        _sidebarHistoryPushed = true;
+      } catch (e) {
+        // ignore — back button just won't close sidebar
+      }
     }
-    return () => {
-      document.body.classList.remove("yp-sidebar-open");
-      document.body.style.overflow = "";
-    };
-  }, [sidebarOpen]);
+  }, []);
 
-  // ESC closes sidebar
+  const closeSidebar = useCallback(
+    (opts?: { skipHistory?: boolean }) => {
+      if (!_sidebarOpen) return;
+      _sidebarOpen = false;
+      setSidebarOpen(false);
+      document.body.classList.remove("yp-sidebar-open");
+      unlockScroll();
+      if (_sidebarHistoryPushed && !opts?.skipHistory) {
+        _sidebarHistoryPushed = false;
+        try {
+          window.history.back();
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        _sidebarHistoryPushed = false;
+      }
+    },
+    []
+  );
+
+  // Listen for hardware-back-triggered close
+  useEffect(() => {
+    const handler = () => setSidebarOpen(false);
+    window.addEventListener("yp-sidebar-close", handler);
+    return () =>
+      window.removeEventListener("yp-sidebar-close", handler);
+  }, []);
+
+  // ESC closes sidebar (matches demo)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && sidebarOpen) {
-        setSidebarOpen(false);
+      if (e.key === "Escape" && _sidebarOpen) {
+        closeSidebar();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [sidebarOpen]);
+  }, [closeSidebar]);
 
   // Close sidebar on route change
   useEffect(() => {
-    setSidebarOpen(false);
+    closeSidebar({ skipHistory: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
-
-  // Hamburger button press feedback
-  const handleMenuClick = () => {
-    setSidebarOpen(true);
-  };
 
   return (
     <div className="app-shell" style={shellStyle} data-shell>
@@ -187,7 +316,7 @@ export function AppShell({
               className="top-bar__menu"
               aria-label="เปิดเมนู"
               type="button"
-              onClick={handleMenuClick}
+              onClick={openSidebar}
             >
               <span className="top-bar__menu-icon">
                 <MenuIcon size={22} />
@@ -243,7 +372,7 @@ export function AppShell({
       <div
         className={`sidebar-backdrop ${sidebarOpen ? "is-open" : ""}`}
         aria-hidden="true"
-        onClick={() => setSidebarOpen(false)}
+        onClick={() => closeSidebar()}
       />
 
       {/* Sidebar panel */}
@@ -266,7 +395,7 @@ export function AppShell({
             className="side-bar__close"
             type="button"
             aria-label="ปิดเมนู"
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => closeSidebar()}
           >
             <CloseIcon size={18} />
           </button>
@@ -281,6 +410,10 @@ export function AppShell({
                 href={item.href}
                 className={`side-bar__item ${isActive ? "is-active" : ""}`}
                 data-nav-key={item.key}
+                onClick={() => {
+                  // Defer close so navigation feels responsive (matches demo)
+                  setTimeout(() => closeSidebar({ skipHistory: true }), 80);
+                }}
               >
                 <span className="side-bar__item-icon">{item.icon}</span>
                 <span className="side-bar__item-label">{item.label}</span>
@@ -291,7 +424,13 @@ export function AppShell({
         </nav>
 
         <div className="side-bar__footer">
-          <Link href="/profile" className="side-bar__user">
+          <Link
+            href="/profile"
+            className="side-bar__user"
+            onClick={() => {
+              setTimeout(() => closeSidebar({ skipHistory: true }), 80);
+            }}
+          >
             <div className="side-bar__user-avatar">
               <Avatar name={user.name} color={user.color} size={40} />
             </div>
