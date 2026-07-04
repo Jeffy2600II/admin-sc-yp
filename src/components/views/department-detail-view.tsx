@@ -348,7 +348,7 @@ export function DepartmentDetailView({ deptId }: DepartmentDetailViewProps) {
             return (
               <UserItem
                 key={u.id}
-                avatar={<Avatar name={u.full_name} color={u.color || undefined} size={40} avatarUrl={u.avatar_url ?? null} />}
+                avatar={<Avatar name={u.full_name} size={40} avatarUrl={u.avatar_url ?? null} />}
                 title={
                   <>
                     {u.full_name}

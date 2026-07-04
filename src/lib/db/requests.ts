@@ -131,11 +131,12 @@ export async function approveRequest(
 
   // 4. Insert council_users row (adminClient — bypasses RLS)
   //
-  // v1.5: Filter the payload to only include columns that actually exist
-  // in the database. If the ypwork migration hasn't run, `color` and
-  // `national_id` columns won't exist and the INSERT would fail with
-  // "Could not find the 'color' column". filterPayload() drops any
-  // keys that don't exist as columns.
+  // v1.7: `color` is NOT a column on council_users (confirmed by schema_sc.md).
+  // The previous version included `color: "#0EA5E9"` in the INSERT, which
+  // caused "Could not find the 'color' column" errors. Now we omit it.
+  // User avatar color is derived from their department at render time.
+  //
+  // filterPayload() also drops any other keys that don't exist as columns.
   const insertPayload = filterPayload("council_users", {
     auth_uid: authUser.user.id,
     full_name: req.full_name,
@@ -147,8 +148,8 @@ export async function approveRequest(
     disabled: false,
     account_type: req.account_type,
     department_id: req.department_id || null,
-    color: "#0EA5E9",
     national_id: req.national_id || "",
+    // NOTE: NO color — council_users has no color column (schema_sc.md)
   });
 
   const { error: insertError } = await adminClient

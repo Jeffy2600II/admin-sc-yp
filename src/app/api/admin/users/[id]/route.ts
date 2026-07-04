@@ -53,7 +53,7 @@ export async function PATCH(
   if (body.departmentId !== undefined) payload.department_id = body.departmentId;
   if (body.approved !== undefined) payload.approved = body.approved;
   if (body.disabled !== undefined) payload.disabled = body.disabled;
-  if (body.color !== undefined) payload.color = body.color;
+  // v1.7: NO color — council_users has no color column (schema_sc.md)
   // v1.6: avatarUrl (real column)
   if (body.avatarUrl !== undefined) payload.avatar_url = body.avatarUrl;
 

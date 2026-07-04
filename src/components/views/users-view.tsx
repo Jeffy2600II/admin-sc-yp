@@ -191,7 +191,6 @@ export function UsersView() {
                 avatar={
                   <Avatar
                     name={u.full_name}
-                    color={u.color || undefined}
                     size={40}
                     avatarUrl={u.avatar_url ?? null}
                   />

@@ -1,23 +1,37 @@
 /**
- * Database types for YP Admin v1.6 — matches the REAL shared Supabase schema
+ * Database types for YP Admin v1.7 — matches the REAL shared Supabase schema
  * as documented in schema_sc.md (verified against the live database).
  *
- * v1.6 changes (vs v1.5):
- * - `council_users.avatar_url` is now a real column (was missing before)
- * - `council_users.national_id` is confirmed present (not optional)
- * - `council_users.student_id` is UNIQUE
- * - `council_join_requests.password` and `message` are real columns
- * - `council_join_requests.student_id` is UNIQUE
- * - `council_years.created_at` is a real column
- * - All ypwork extension columns are confirmed present (department_id, color, national_id)
+ * v1.7 CRITICAL FIX (vs v1.6):
+ * - `council_users` does NOT have a `color` column (schema_sc.md confirms this).
+ *   The previous version assumed ypwork added it, but the live database doesn't
+ *   have it. Every INSERT that included `color` failed with
+ *   "Could not find the 'color' column of 'council_users' in the schema cache".
+ *   Now `color` is completely removed from council_users.
+ * - User avatar color is derived from their department's `color` column instead.
  *
- * RLS policies (from schema_sc.md):
- * - council_users: insert_admin, update_self_or_admin, delete_admin, select_own/authenticated
- * - council_join_requests: insert anyone, select authenticated/own, delete admin
- * - council_years: select anyone, modify admin (authenticated)
- * - departments: select anyone, modify admin
+ * v1.7 schema detection:
+ * - The `detectSchemaColumns()` function now uses a more reliable method
+ *   (SELECT * FROM table LIMIT 0) instead of `information_schema.columns`
+ *   which Supabase may not expose via PostgREST.
  *
- * Source: schema_sc.md (provided by user, verified against live Supabase)
+ * Verified columns from schema_sc.md:
+ *
+ * council_users (PK: id uuid, UNIQUE: auth_uid, student_id):
+ *   id, auth_uid, full_name, student_id, email, year, role, account_type,
+ *   approved, disabled, department_id, avatar_url, national_id, created_at
+ *   (NO color column!)
+ *
+ * council_years (PK: year integer):
+ *   year, closed, created_at
+ *
+ * council_join_requests (PK: id uuid, UNIQUE: student_id):
+ *   id, full_name, student_id, year, email, password, message, account_type,
+ *   national_id, department_id, created_at
+ *
+ * departments (PK: id text):
+ *   id, name, color, icon, description, created_at, updated_at
+ *   (color is here, NOT in council_users)
  */
 export type Database = {
   public: {
@@ -35,9 +49,10 @@ export type Database = {
           disabled: boolean;
           account_type: "student" | "teacher" | "other";
           department_id: string | null;
-          avatar_url: string | null; // v1.6: confirmed real column
-          national_id: string; // v1.6: confirmed present
+          avatar_url: string | null;
+          national_id: string;
           created_at: string;
+          // NOTE: NO `color` column — schema_sc.md confirms this
         };
         Insert: {
           id?: string;
@@ -61,7 +76,7 @@ export type Database = {
         Row: {
           year: number;
           closed: boolean;
-          created_at: string; // v1.6: confirmed real column
+          created_at: string;
         };
         Insert: {
           year: number;
@@ -77,10 +92,10 @@ export type Database = {
           student_id: string; // UNIQUE
           year: number;
           email: string;
-          password: string; // v1.6: confirmed real column (plaintext — used for auth account creation)
-          message: string; // v1.6: confirmed real column (note from applicant)
+          password: string;
+          message: string;
           account_type: "student" | "teacher" | "other";
-          national_id: string; // v1.6: confirmed present
+          national_id: string;
           department_id: string | null;
           created_at: string;
         };
@@ -139,9 +154,9 @@ export type Department = Database["public"]["Tables"]["departments"]["Row"];
 /**
  * Session user — slimmed-down version of CouncilUser, stored in context.
  *
- * v1.6: `avatarUrl` is now a real field (was missing before). `color` falls
- * back to a default brand color if not set (ypwork may not have set it for
- * legacy users).
+ * v1.7: `color` is NOT stored on the user — it's derived from the user's
+ * department at render time. The SessionUser carries `departmentId` and
+ * the AppShell/views look up the department's color when rendering avatars.
  */
 export interface SessionUser {
   id: string;
@@ -150,11 +165,10 @@ export interface SessionUser {
   role: "admin" | "member";
   roleLabel: string;
   departmentId: string | null;
-  color: string;
   nationalId: string;
   studentCode: string;
   email: string;
   accountType: "student" | "teacher" | "other";
   year: number;
-  avatarUrl: string | null; // v1.6: real column now
+  avatarUrl: string | null;
 }

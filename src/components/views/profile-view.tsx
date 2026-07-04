@@ -117,7 +117,7 @@ export function ProfileView() {
                 color: "var(--yp-text-muted)",
               }}
             >
-              เวอร์ชัน 1.6 · © 2026
+              เวอร์ชัน 1.7 · © 2026
             </p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export function ProfileView() {
   return (
     <div className="page container">
       <ProfileHero
-        avatar={<Avatar name={user.name} color={user.color} size={104} avatarUrl={user.avatarUrl} />}
+        avatar={<Avatar name={user.name} size={104} avatarUrl={user.avatarUrl} />}
         name={user.name}
         role={
           user.role === "admin"
@@ -243,7 +243,7 @@ export function ProfileView() {
             marginBottom: 4,
           }}
         >
-          YP Admin · v1.6
+          YP Admin · v1.7
         </div>
         <div>Student Council Operations Hub</div>
         <div style={{ marginTop: 6, opacity: 0.7 }}>© 2026</div>

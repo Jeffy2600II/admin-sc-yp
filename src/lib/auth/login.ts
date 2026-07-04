@@ -62,8 +62,9 @@ export function validateOther(email: string, password: string) {
 /**
  * Map a council_users row to a SessionUser.
  *
- * v1.6: `color` falls back to a default brand color (the column exists but
- * may be empty for legacy users). `avatarUrl` is a real column now.
+ * v1.7: `color` is no longer on the user — it's derived from the user's
+ * department at render time. SessionUser carries `departmentId` so views
+ * can look up the department color.
  */
 function toSessionUser(row: Database["public"]["Tables"]["council_users"]["Row"]): SessionUser {
   return {
@@ -73,7 +74,6 @@ function toSessionUser(row: Database["public"]["Tables"]["council_users"]["Row"]
     role: row.role,
     roleLabel: roleLabel(row.role, row.account_type),
     departmentId: row.department_id ?? null,
-    color: row.color || "#0EA5E9",
     nationalId: row.national_id || "",
     studentCode: row.student_id || "",
     email: row.email || "",

@@ -29,7 +29,7 @@ export interface UserUpdatePatch {
   departmentId?: string | null;
   approved?: boolean;
   disabled?: boolean;
-  color?: string;
+  // v1.7: NO color — council_users has no color column (schema_sc.md)
 }
 
 /**
@@ -54,7 +54,7 @@ export async function updateUser(
     payload.department_id = patch.departmentId;
   if (patch.approved !== undefined) payload.approved = patch.approved;
   if (patch.disabled !== undefined) payload.disabled = patch.disabled;
-  if (patch.color !== undefined) payload.color = patch.color;
+  // v1.7: NO color — council_users has no color column
 
   const { error } = await supabase
     .from("council_users")

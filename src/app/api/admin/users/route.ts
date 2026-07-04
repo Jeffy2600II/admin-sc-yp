@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
     year,
     accountType,
     departmentId,
-    color,
+    // v1.7: color removed — council_users has no color column (schema_sc.md)
     role,
-    avatarUrl, // v1.6: real column
+    avatarUrl,
   } = body;
 
   if (!fullName || typeof fullName !== "string") {
@@ -105,8 +105,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insert council_users row
-    // v1.5: filter payload to only include columns that exist in the DB
-    // v1.6: include avatar_url (confirmed real column)
+    // v1.7: NO color column (schema_sc.md confirms). filterPayload() also
+    // drops any other keys that don't exist as columns.
     const insertPayload = filterPayload("council_users", {
       auth_uid: authUser.user.id,
       full_name: fullName,
@@ -118,9 +118,9 @@ export async function POST(request: NextRequest) {
       disabled: false,
       account_type: acctType,
       department_id: departmentId || null,
-      color: color || "#0EA5E9",
       national_id: nationalId || "",
-      avatar_url: avatarUrl ?? null, // v1.6: real column
+      avatar_url: avatarUrl ?? null,
+      // NOTE: NO color — council_users has no color column
     });
 
     const { error: insertError } = await guard.adminClient

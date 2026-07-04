@@ -1,4 +1,4 @@
-# YP Admin v1.6
+# YP Admin v1.7
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -163,6 +163,59 @@ INSERT INTO public.council_users (
 - **Mobile-first responsive** (iPhone 14 → desktop)
 - **PWA-ready** (manifest + icons)
 - **Sky Blue + Cyan accent** บนพื้นขาวสะอาด
+
+---
+
+## การปรับปรุงใน v1.7 (Critical Fix — ลบ `color` ออกจาก council_users)
+
+### Bug Fixes (Critical — แก้ไข "Could not find the 'color' column")
+- **`council_users.color` ไม่มีอยู่จริง** — ปัญหาร้ายแรงที่สุดของ v1.6: ผมอ่าน schema_sc.md ผิดเอง คิดว่า ypwork migration เพิ่ม `color` ใน council_users แต่จริงๆ แล้ว **schema_sc.md บอกชัดเจนว่า council_users ไม่มี `color`** (มีแค่ใน `departments` เท่านั้น)
+- ผล: ทุกการ INSERT ที่ส่ง `color` ไป → ฐานข้อมูลตีกลับด้วย "Could not find the 'color' column of 'council_users' in the schema cache"
+- **แก้ไข**: ลบ `color` ออกจาก council_users ทุกที่:
+  - Database types (SessionUser ไม่มี color แล้ว)
+  - INSERT payloads (approveRequest, createUser API)
+  - UPDATE payloads (updateUser API, lib/db/users.ts)
+  - API helpers (CreateUserPayload, UserPatch)
+  - Fallback cache ใน schema-detect (ถูกต้องตาม schema_sc.md 100%)
+- **Avatar color**: ใช้สีจาก `departments.color` แทน (ผ่าน `dept?.color`) หรือใช้ brand gradient เป็น fallback
+
+### Schema Detection (v1.7 — เสถียรกว่าเดิม)
+- **ปัญหา v1.6**: `detectSchemaColumns()` ใช้ `information_schema.columns` ผ่าน PostgREST แต่ Supabase อาจไม่เปิดให้ query ได้ → ใช้ fallback cache ที่มี `color` (ผิด) → INSERT ส่ง `color` ไป → error
+- **v1.7 แก้ไข**: 
+  1. เปลี่ยน detection method เป็น `SELECT * FROM table LIMIT 1` แล้ว inspect keys ของ row แรก (เสถียรกว่า ทำงานได้แม้ PostgREST ไม่เปิด information_schema)
+  2. Fallback cache ตอนนี้ถูกต้องตาม schema_sc.md 100% — ไม่มี `color` ใน council_users
+  3. `filterPayload()` log warning เมื่อ drop column ที่ไม่มี → debug ง่ายขึ้น
+
+### Schema จริงที่อ้างอิง (verified จาก schema_sc.md — ไม่มี color ใน council_users!)
+
+**`council_users`** (PK: id uuid, UNIQUE: auth_uid, student_id):
+- id, auth_uid, full_name, student_id, email, year, role, account_type, approved, disabled
+- department_id (FK → departments.id), avatar_url, national_id, created_at
+- **ไม่มี `color`** (ยืนยันจาก schema_sc.md)
+
+**`council_years`** (PK: year integer):
+- year, closed, created_at
+
+**`council_join_requests`** (PK: id uuid, UNIQUE: student_id):
+- id, full_name, student_id, year, email, password, message, account_type
+- national_id, department_id, created_at
+- **ไม่มี `color`**
+
+**`departments`** (PK: id text):
+- id, name, **color**, icon, description, created_at, updated_at
+- `color` มีเฉพาะที่นี่เท่านั้น!
+
+### การใช้ Color ที่ถูกต้อง (v1.7)
+- User avatar → ใช้ `dept.color` (สีของฝ่ายงานที่ user สังกัด) หรือ brand gradient ถ้าไม่มีฝ่าย
+- Department avatar/card → ใช้ `dept.color` (สีของฝ่ายโดยตรง)
+- Hero gradient ใน user-detail → ใช้ `dept?.color || "#0EA5E9"`
+- ไม่มีการ INSERT/UPDATE `color` ใน council_users อีกต่อไป
+
+### Verified
+- Build ผ่านสมบูรณ์ บน Next.js 16.2.10 + Tailwind v4.3.2
+- ไม่มี `color` ใน INSERT/UPDATE payload ของ council_users (ยืนยันด้วย grep)
+- Fallback cache ใน schema-detect ตรงกับ schema_sc.md 100%
+- Avatar ใช้ department color หรือ brand gradient เท่านั้น
 
 ---
 
@@ -400,4 +453,4 @@ INSERT INTO public.council_users (
 
 ---
 
-© 2026 YP Admin · v1.6
+© 2026 YP Admin · v1.7

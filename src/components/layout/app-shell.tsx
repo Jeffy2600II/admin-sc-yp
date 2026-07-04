@@ -345,7 +345,6 @@ export function AppShell({
           >
             <Avatar
               name={user.name}
-              color={user.color}
               size={32}
               className="top-bar__avatar-img"
               avatarUrl={user.avatarUrl}
@@ -433,7 +432,7 @@ export function AppShell({
             }}
           >
             <div className="side-bar__user-avatar">
-              <Avatar name={user.name} color={user.color} size={40} avatarUrl={user.avatarUrl} />
+              <Avatar name={user.name} size={40} avatarUrl={user.avatarUrl} />
             </div>
             <div className="side-bar__user-info">
               <div className="side-bar__user-name">{user.name}</div>

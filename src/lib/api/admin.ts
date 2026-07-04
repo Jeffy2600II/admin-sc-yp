@@ -58,7 +58,7 @@ export interface CreateUserPayload {
   year: number;
   accountType?: string;
   departmentId?: string | null;
-  color?: string;
+  // v1.7: NO color — council_users has no color column (schema_sc.md)
   role?: string;
   /** v1.6: optional admin-set password (min 6 chars). Falls back to studentId or "123456". */
   password?: string;
@@ -85,7 +85,7 @@ export type UserPatch = {
   departmentId?: string | null;
   approved?: boolean;
   disabled?: boolean;
-  color?: string;
+  // v1.7: NO color — council_users has no color column (schema_sc.md)
   /** v1.6: avatar URL (council_users.avatar_url) */
   avatarUrl?: string | null;
 };

@@ -333,7 +333,7 @@ function LoginPageInner() {
         </div>
 
         <div className="login__footer">
-          © 2026 YP Admin v1.6 · เฉพาะผู้ดูแลระบบเท่านั้น · เชื่อมต่อกับ Supabase
+          © 2026 YP Admin v1.7 · เฉพาะผู้ดูแลระบบเท่านั้น · เชื่อมต่อกับ Supabase
         </div>
       </div>
     </div>
