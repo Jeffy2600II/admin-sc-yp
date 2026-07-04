@@ -136,12 +136,17 @@ export async function approveRequest(
   // caused "Could not find the 'color' column" errors. Now we omit it.
   // User avatar color is derived from their department at render time.
   //
+  // v1.9.1: For student accounts, do NOT insert `email` into council_users.
+  // The student login flow uses synthesized email (student_<code>@yplabs.internal)
+  // and if council_users.email contains a different email, login breaks.
+  // Only insert email for teacher/other accounts (which login with real email).
+  //
   // filterPayload() also drops any other keys that don't exist as columns.
   const insertPayload = filterPayload("council_users", {
     auth_uid: authUser.user.id,
     full_name: req.full_name,
     student_id: req.student_id || "",
-    email: req.email || email,
+    email: req.account_type === "student" ? "" : (req.email || email),
     year: req.year,
     role: "member",
     approved: true,

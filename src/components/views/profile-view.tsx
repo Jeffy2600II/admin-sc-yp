@@ -117,7 +117,7 @@ export function ProfileView() {
                 color: "var(--yp-text-muted)",
               }}
             >
-              เวอร์ชัน 1.9 · © 2026
+              เวอร์ชัน 1.9.1 · © 2026
             </p>
           </div>
         </div>
@@ -243,7 +243,7 @@ export function ProfileView() {
             marginBottom: 4,
           }}
         >
-          YP Admin · v1.9
+          YP Admin · v1.9.1
         </div>
         <div>Student Council Operations Hub</div>
         <div style={{ marginTop: 6, opacity: 0.7 }}>© 2026</div>

@@ -107,11 +107,16 @@ export async function POST(request: NextRequest) {
     // 2. Insert council_users row
     // v1.7: NO color column (schema_sc.md confirms). filterPayload() also
     // drops any other keys that don't exist as columns.
+    //
+    // v1.9.1: For student accounts, do NOT insert `email` into council_users.
+    // The student login flow uses synthesized email (student_<code>@yplabs.internal)
+    // and if council_users.email contains a different email, login breaks.
+    // Only insert email for teacher/other accounts (which login with real email).
     const insertPayload = filterPayload("council_users", {
       auth_uid: authUser.user.id,
       full_name: fullName,
       student_id: studentId || "",
-      email: email || authEmail,
+      email: acctType === "student" ? "" : (email || authEmail),
       year,
       role: role || "member",
       approved: true,

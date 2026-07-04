@@ -1,4 +1,4 @@
-# YP Admin v1.9
+# YP Admin v1.9.1
 
 > **ระบบหลังบ้านสำหรับสภานักเรียน** — จัดการฝ่ายงาน บัญชีผู้ใช้ ปีการศึกษา และคำขอสมัครสมาชิก
 > Next.js 16 + TypeScript + React + Supabase · Deploy บน Vercel
@@ -163,6 +163,21 @@ INSERT INTO public.council_users (
 - **Mobile-first responsive** (iPhone 14 → desktop)
 - **PWA-ready** (manifest + icons)
 - **Sky Blue + Cyan accent** บนพื้นขาวสะอาด
+
+---
+
+## การปรับปรุงใน v1.9.1 (Student Email Fix)
+
+### Bug Fixes (Critical — แก้ไข "นักเรียน login ไม่ได้หลังสร้างบัญชี")
+- **บัญชีนักเรียนไม่ควรมี email ใน council_users** — ปัญหา: เมื่อ admin สร้างบัญชีนักเรียน (ผ่าน approveRequest หรือ createUser API) ระบบใส่ `email` ลงใน `council_users.email` แต่ระบบ login ของนักเรียนใช้ synthesized email (`student_<code>@yplabs.internal`) ถ้า `council_users.email` มี email อื่น จะทำให้ login ไม่ได้
+- **แก้ไข**:
+  - `approveRequest` (requests.ts): ถ้า `account_type === "student"` → ใส่ `email: ""` ใน council_users (ไม่ใส่ email จริง)
+  - `createUser` API (users/route.ts): ถ้า `account_type === "student"` → ใส่ `email: ""` ใน council_users
+  - ครู/อื่นๆ ยังคงใส่ email ปกติ (เพราะ login ด้วย email จริง)
+- **ผล**: นักเรียนที่สร้างบัญชีใหม่สามารถ login ได้ด้วย เลขบัตรประชาชน + รหัสนักเรียน
+
+### การ Zip ไฟล์ (v1.9.1)
+- เปลี่ยนวิธี zip: ไม่สร้างโฟลเดอร์ห่อหุ้มอีกต่อไป — แตกไฟล์แล้วได้ไฟล์ทั้งหมดออกมาเลย (ไม่มีโฟลเดอร์ซ้อน)
 
 ---
 
@@ -525,4 +540,4 @@ confirmDestructive(opts) → Promise<boolean>
 
 ---
 
-© 2026 YP Admin · v1.9
+© 2026 YP Admin · v1.9.1
